@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GT Off-Campus Housing Map</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+        crossorigin="anonymous" />
+    <style>
+        :root {
+            --gt-gold: #B3A369;
+            --gt-navy: #003057;
+            --light-gray: #f5f5f5;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--light-gray);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--gt-navy);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            position: relative;
+        }
+
+        .header-left h1 {
+            color: var(--gt-gold);
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .header-left p {
+            margin: 2px 0 0 0;
+            font-size: 14px;
+        }
+
+
+
+        /* Main container */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 70px);
+        }
+
+        /* Map container */
+        .map-container {
+            width: 66.67%;
+            height: 100%;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Listings panel */
+        .listings-panel {
+            width: 33.33%;
+            height: 100%;
+            background: white;
+            overflow-y: auto;
+            border-left: 1px solid #ddd;
+        }
+
+        .listings-header {
+            padding: 20px;
+            background: var(--gt-navy);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .listings-header h2 {
+            margin: 0;
+            color: var(--gt-gold);
+            flex-shrink: 0;
+        }
+
+        /* Search box in listings header */
+        .listings-search-container {
+            position: relative;
+            flex: 1;
+            max-width: 250px;
+        }
+
+        .listings-search-input {
+            width: 100%;
+            padding: 8px 30px 8px 10px;
+            border: 2px solid var(--gt-gold);
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-clear-btn:hover {
+            color: #333;
+        }
+
+        .listings-container {
+            padding: 0;
+        }
+
+        /* Listing card */
+        .listing-card {
+            border-bottom: 1px solid #eee;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .listing-card:hover {
+            background-color: var(--light-gray);
+        }
+
+        .listing-card.focused {
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--gt-navy);
+            padding-left: 16px;
+        }
+
+        .listing-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--gt-navy);
+            margin-bottom: 8px;
+        }
+
+        .listing-address {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .listing-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .listing-bedrooms {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .listing-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--gt-navy);
+        }
+
+        .listing-phone {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .view-details-btn {
+            background-color: var(--gt-navy);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
+
+        .view-details-btn:hover {
+            background-color: var(--gt-gold);
+        }
+
+        /* Simple hover tooltip */
+        .leaflet-tooltip {
+            max-width: 250px !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+            padding: 8px !important;
+            border-radius: 4px !important;
+            box-shadow: var(--shadow) !important;
+        }
+
+        .simple-tooltip {
+            max-width: 100%;
+            font-size: 12px;
+        }
+
+        .simple-tooltip .tooltip-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+            word-wrap: break-word;
+            line-height: 1.3;
+        }
+
+        .simple-tooltip .tooltip-address {
+            color: #666;
+            font-size: 11px;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+
+        #loading-status {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 10px 16px;
+            background: var(--gt-navy);
+            color: white;
+            border-radius: 20px;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+            font-size: 12px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .map-container {
+                width: 100%;
+                height: 60%;
+            }
+            
+            .listings-panel {
+                width: 100%;
+                height: 40%;
+                border-left: none;
+                border-top: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1>StingerSpaces</h1>
+            <p>Georgia Tech Off-Campus Housing Finder</p>
+        </div>
+    </header>
+    
+    <div id="loading-status">Loading apartments...</div>
+    
+    <div class="main-container">
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+        
+        <div class="listings-panel">
+            <div class="listings-header">
+                <h2>Apartment Listings</h2>
+                <div class="listings-search-container">
+                    <input type="text" id="listings-search-input" class="listings-search-input" placeholder="Search apartments...">
+                    <button id="search-clear-btn" class="search-clear-btn" title="Clear search">×</button>
+                </div>
+            </div>
+            <div class="listings-container" id="listings-container">
+                <!-- Listings will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin="anonymous"></script>
+    <script>
+        // Initialize the map centered on Georgia Tech
+        const map = L.map('map').setView([33.7756, -84.3963], 14);
+        const loadingStatus = document.getElementById('loading-status');
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Helper function to delay execution
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Session storage key for geocoded addresses
+        const GEOCACHE_KEY = 'stingerspaces_geocache';
+        
+        // Load geocache from session storage
+        function loadGeoCache() {
+            try {
+                const cached = sessionStorage.getItem(GEOCACHE_KEY);
+                return cached ? JSON.parse(cached) : {};
+            } catch (error) {
+                console.error('Error loading geocache:', error);
+                return {};
+            }
+        }
+        
+        // Save geocache to session storage
+        function saveGeoCache(cache) {
+            try {
+                sessionStorage.setItem(GEOCACHE_KEY, JSON.stringify(cache));
+            } catch (error) {
+                console.error('Error saving geocache:', error);
+            }
+        }
+        
+        // Function to geocode address using Nominatim with caching
+        async function geocodeAddress(address, currentIndex, totalCount) {
+            try {
+                const geoCache = loadGeoCache();
+                
+                // Check if we have cached coordinates
+                if (geoCache[address]) {
+                    loadingStatus.textContent = `Loading apartments ${currentIndex + 1}/${totalCount}`;
+                    console.log('Using cached coordinates for:', address);
+                    return geoCache[address];
+                }
+                
+                // Add a delay before each geocoding request to avoid rate limiting
+                await delay(1000);
+                
+                loadingStatus.textContent = `Geocoding ${currentIndex + 1}/${totalCount}`;
+                console.log('Geocoding address:', address);
+                
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Geocoding response:', data);
+                
+                let coords = null;
+                if (data.length > 0) {
+                    coords = {
+                        lat: parseFloat(data[0].lat),
+                        lon: parseFloat(data[0].lon)
+                    };
+                    
+                    // Cache the result
+                    geoCache[address] = coords;
+                    saveGeoCache(geoCache);
+                } else {
+                    console.warn('No coordinates found for address:', address);
+                    // Cache null result to avoid re-geocoding
+                    geoCache[address] = null;
+                    saveGeoCache(geoCache);
+                }
+                
+                return coords;
+            } catch (error) {
+                console.error('Error geocoding address:', address, error);
+                return null;
+            }
+        }
+
+        // Function to create simple hover tooltip content
+        function createTooltipContent(apartment) {
+            return `
+                <div class="simple-tooltip">
+                    <div class="tooltip-name">${apartment.name}</div>
+                    <div class="tooltip-address">${apartment.formatted_address}</div>
+                </div>
+            `;
+        }
+
+        // Function to create listing card HTML
+        function createListingCard(apartment, index) {
+            return `
+                <div class="listing-card" data-apartment-name="${apartment.name}" id="listing-${index}">
+                    <div class="listing-name">${apartment.name}</div>
+                    <div class="listing-address">${apartment.formatted_address}</div>
+                    <div class="listing-phone">${apartment.phone}</div>
+                    <div class="listing-details">
+                        <div class="listing-bedrooms">${apartment.bed_range}</div>
+                        <div class="listing-price">${apartment.price_range}</div>
+                    </div>
+                    <button class="view-details-btn" onclick="viewApartmentDetails('${apartment.name}')">
+                        View Details
+                    </button>
+                </div>
+            `;
+        }
+
+        // Function to populate listings panel
+        function populateListings() {
+            const listingsContainer = document.getElementById('listings-container');
+            listingsContainer.innerHTML = apartmentsData
+                .map((apartment, index) => createListingCard(apartment, index))
+                .join('');
+            
+            // Add click handlers to listing cards
+            document.querySelectorAll('.listing-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (!e.target.classList.contains('view-details-btn')) {
+                        const apartmentName = this.dataset.apartmentName;
+                        focusApartmentFromListing(apartmentName);
+                    }
+                });
+            });
+        }
+
+        // Function to focus apartment from map marker click
+        function focusApartmentFromMap(apartmentName) {
+            // Remove focus from all listings
+            document.querySelectorAll('.listing-card').forEach(card => {
+                card.classList.remove('focused');
+            });
+            
+            // Find and focus the corresponding listing
+            const targetCard = document.querySelector(`[data-apartment-name="${apartmentName}"]`);
+            if (targetCard) {
+                targetCard.classList.add('focused');
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Function to focus apartment from listing click
+        function focusApartmentFromListing(apartmentName) {
+            const apartment = apartmentsData.find(apt => apt.name === apartmentName);
+            if (apartment && apartment.coordinates) {
+                // Center map on apartment
+                map.setView([apartment.coordinates.lat, apartment.coordinates.lon], 16);
+                
+                // Focus the listing card
+                document.querySelectorAll('.listing-card').forEach(card => {
+                    card.classList.remove('focused');
+                });
+                const targetCard = document.querySelector(`[data-apartment-name="${apartmentName}"]`);
+                if (targetCard) {
+                    targetCard.classList.add('focused');
+                }
+                
+                // Open the marker popup
+                if (apartment.marker) {
+                    apartment.marker.openPopup();
+                }
+            }
+        }
+
+        // Function to view apartment details (navigate to detail page)
+        function viewApartmentDetails(apartmentName) {
+            // Create URL with apartment name as parameter
+            const encodedName = encodeURIComponent(apartmentName);
+            window.open(`apartment-details.html?apartment=${encodedName}`, '_blank');
+        }
+
+        // Load and process apartment data
+        let apartmentsData = [];
+        async function loadApartments() {
+            try {
+                console.log('Starting to load apartment data...');
+                loadingStatus.textContent = 'Loading apartment data...';
+                
+                const response = await fetch('../backend/data/apartment_data.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                apartmentsData = await response.json();
+                console.log(`Loaded ${apartmentsData.length} apartments`);
+                
+                // Process each apartment with progress indicator
+                for (let i = 0; i < apartmentsData.length; i++) {
+                    const apartment = apartmentsData[i];
+                    console.log(`Processing apartment ${i + 1}/${apartmentsData.length}:`, apartment.name);
+                    
+                    const coords = await geocodeAddress(apartment.formatted_address, i, apartmentsData.length);
+                    if (coords) {
+                        console.log('Coordinates found for', apartment.name, coords);
+                        
+                        // Create marker with hover tooltip and click action
+                        const marker = L.marker([coords.lat, coords.lon])
+                            .bindTooltip(createTooltipContent(apartment), {
+                                permanent: false,
+                                direction: 'top',
+                                offset: [0, -10],
+                                opacity: 0.9
+                            })
+                            .addTo(map);
+
+                        // Add click event to marker
+                        marker.on('click', function() {
+                            focusApartmentFromMap(apartment.name);
+                        });
+
+                        // Store coordinates and marker in apartment data
+                        apartment.coordinates = coords;
+                        apartment.marker = marker;
+                    } else {
+                        console.warn('No coordinates found for', apartment.name);
+                    }
+                }
+                
+                // Populate the listings panel
+                populateListings();
+                
+                loadingStatus.textContent = `✅ Loaded ${apartmentsData.length} apartments`;
+                setTimeout(() => {
+                    loadingStatus.style.display = 'none';
+                }, 2000);
+                
+                return true; // Success
+                
+            } catch (error) {
+                console.error('Error loading apartment data:', error);
+                loadingStatus.textContent = '❌ Error loading apartments';
+                loadingStatus.style.backgroundColor = '#d32f2f';
+                return false; // Failed
+            }
+        }
+
+        // Initialize search functionality
+        function initializeSearch() {
+            const searchInput = document.getElementById('listings-search-input');
+            const clearBtn = document.getElementById('search-clear-btn');
+
+            // Hide clear button initially
+            clearBtn.style.display = 'none';
+
+            function filterListings(searchTerm) {
+                const listingsContainer = document.getElementById('listings-container');
+                const allListings = listingsContainer.querySelectorAll('.listing-card');
+                
+                if (!searchTerm || searchTerm.length === 0) {
+                    // Show all listings
+                    allListings.forEach(listing => {
+                        listing.style.display = 'block';
+                    });
+                    clearBtn.style.display = 'none';
+                    return;
+                }
+
+                clearBtn.style.display = 'flex';
+                let visibleCount = 0;
+
+                allListings.forEach(listing => {
+                    const name = listing.querySelector('.listing-name').textContent.toLowerCase();
+                    const address = listing.querySelector('.listing-address').textContent.toLowerCase();
+                    
+                    if (name.includes(searchTerm.toLowerCase()) || address.includes(searchTerm.toLowerCase())) {
+                        listing.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        listing.style.display = 'none';
+                    }
+                });
+            }
+
+            searchInput.addEventListener('input', function() {
+                filterListings(this.value);
+            });
+
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                filterListings('');
+                searchInput.focus();
+            });
+        }
+
+        // Initialize the map with apartments
+        loadApartments().then(() => {
+            // Initialize search after apartments are loaded
+            initializeSearch();
+        });
+
+
+    </script>
+</body>
+</html>

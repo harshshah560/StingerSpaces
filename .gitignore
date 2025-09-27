@@ -48,6 +48,28 @@ Thumbs.db
 # ChromeDriver
 chromedriver*
 
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.development
+*.key
+secrets/
+
+# Backend output and logs
+backend/output/*.json
+backend/logs/*.log
+backend/logs/*.err
+
 # Temporary files
 *.tmp
 temp/
+*.sql
+
+# Test files
+*test*.py
+*demo*.py
+*debug*.html
+
+# Supabase setup files
+SUPABASE_*.sql
