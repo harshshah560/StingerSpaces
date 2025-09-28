@@ -973,11 +973,6 @@
                             </div>
                         </div>
 
-                        <div id="financial-preview" class="financial-preview" style="display: none;">
-                            <div class="financial-preview-title">💰 Average Monthly Costs (from reviews)</div>
-                            <div id="financial-preview-content"></div>
-                        </div>
-
                         ${phoneDisplay !== 'Contact info available on source' ? 
                             `<a href="tel:${apartmentInfo.phone}" class="contact-btn">Call ${apartmentInfo.phone}</a>` : 
                             `<a href="${sourceUrl}" target="_blank" class="contact-btn">Contact Property</a>`
@@ -1081,9 +1076,6 @@
                 const reviewsListHtml = generateReviewsList(reviews);
 
                 reviewsContent.innerHTML = summaryHtml + financialSummaryHtml + reviewsListHtml;
-
-                // Update financial preview in header if there's financial data
-                updateFinancialPreview(financialAverages, financialCounts);
 
             } catch (error) {
                 console.error('Error loading reviews:', error);
@@ -1361,59 +1353,6 @@
             }
 
             return starsHtml;
-        }
-
-        // Update financial preview in the apartment header
-        function updateFinancialPreview(financialAverages, financialCounts) {
-            const previewSection = document.getElementById('financial-preview');
-            const previewContent = document.getElementById('financial-preview-content');
-            
-            const hasFinancialData = Object.keys(financialAverages).length > 0;
-            
-            if (!hasFinancialData) {
-                previewSection.style.display = 'none';
-                return;
-            }
-
-            const financialLabels = {
-                monthly_rent: 'Monthly Rent',
-                hidden_fees: 'Hidden Fees',
-                utilities_cost: 'Utilities',
-                parking_cost: 'Parking'
-            };
-
-            let previewHtml = '<div class="financial-preview-grid">';
-
-            Object.entries(financialLabels).forEach(([key, label]) => {
-                if (financialAverages[key] !== undefined) {
-                    const avg = financialAverages[key];
-                    const count = financialCounts[key];
-                    
-                    previewHtml += `
-                        <div class="financial-preview-item">
-                            <div class="financial-preview-label">${label}</div>
-                            <div class="financial-preview-value">$${avg.toFixed(0)}</div>
-                            <div class="financial-preview-note">${count} review${count !== 1 ? 's' : ''}</div>
-                        </div>
-                    `;
-                }
-            });
-
-            // Calculate and show total monthly cost
-            const totalCost = Object.values(financialAverages).reduce((sum, cost) => sum + cost, 0);
-            if (totalCost > 0) {
-                previewHtml += `
-                    <div class="financial-preview-item" style="border: 2px solid var(--gt-gold); background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
-                        <div class="financial-preview-label">Total Monthly</div>
-                        <div class="financial-preview-value" style="font-size: 18px; color: var(--gt-gold);">$${totalCost.toFixed(0)}</div>
-                        <div class="financial-preview-note">Est. per person</div>
-                    </div>
-                `;
-            }
-
-            previewHtml += '</div>';
-            previewContent.innerHTML = previewHtml;
-            previewSection.style.display = 'block';
         }
 
         // Initialize page

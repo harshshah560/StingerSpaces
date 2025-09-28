@@ -1,0 +1,74 @@
+{
+  "name": "stingerspaces",
+  "version": "1.0.0",
+  "description": "Georgia Tech Off-Campus Housing Finder - A comprehensive platform helping GT students find the perfect apartment near campus with real listing data and authentic student reviews.",
+  "main": "frontend/index.html",
+  "type": "module",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8080",
+    "serve": "npx http-server frontend -p 3000 -c-1",
+    "serve-python": "python -m http.server 3000",
+    "build": "echo 'Static site - no build required'",
+    "install-python": "pip install -r requirements.txt",
+    "setup": "npm run install-python",
+    "sync-data": "cd backend/src && python apartment_data_syncer.py",
+    "export-data": "cd backend/src && python supabase_data_exporter.py",
+    "scrape": "cd backend/src && python daily_apartment_scraper.py",
+    "lint": "echo 'Run: black backend/ && flake8 backend/'",
+    "test": "echo 'Run: pytest backend/tests/'",
+    "deploy": "echo 'Deploy frontend/ directory to your hosting service'"
+  },
+  "keywords": [
+    "georgia-tech",
+    "gt",
+    "apartments",
+    "housing",
+    "student-housing",
+    "off-campus",
+    "atlanta",
+    "rental",
+    "reviews",
+    "real-estate",
+    "web-scraping",
+    "supabase",
+    "leaflet",
+    "maps",
+    "static-site"
+  ],
+  "author": {
+    "name": "Harsh Shah",
+    "email": "harshshah560@gmail.com",
+    "url": "https://github.com/harshshah560"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harshshah560/StingerSpaces.git"
+  },
+  "bugs": {
+    "url": "https://github.com/harshshah560/StingerSpaces/issues"
+  },
+  "homepage": "https://github.com/harshshah560/StingerSpaces#readme",
+  "engines": {
+    "node": ">=16.0.0",
+    "python": ">=3.8.0"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "peerDependencies": {},
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie <= 11"
+  ],
+  "config": {
+    "port": "8000",
+    "dev_port": "8080"
+  }
+}
