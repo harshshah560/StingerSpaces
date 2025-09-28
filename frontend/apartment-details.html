@@ -523,6 +523,20 @@
             color: var(--gt-navy);
         }
 
+        .financial-info-placeholder {
+            margin: 10px 0;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #dee2e6;
+        }
+
+        .financial-placeholder-text {
+            font-size: 12px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
         .financial-summary {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1262,6 +1276,14 @@
 
         // Generate financial information for individual review
         function generateFinancialInfo(review) {
+            // Debug log to see what financial data is available
+            console.log('Financial data for review:', {
+                monthly_rent: review.monthly_rent,
+                hidden_fees: review.hidden_fees,
+                utilities_cost: review.utilities_cost,
+                parking_cost: review.parking_cost
+            });
+
             const financialData = [];
             
             if (review.monthly_rent && review.monthly_rent > 0) {
@@ -1277,7 +1299,11 @@
                 financialData.push({ label: 'Parking', value: review.parking_cost === 0 ? 'Free' : `$${review.parking_cost}` });
             }
             
-            if (financialData.length === 0) return '';
+            if (financialData.length === 0) {
+                console.log('No financial data found for this review');
+                // Return a placeholder to indicate financial data wasn't provided
+                return '<div class="financial-info-placeholder"><span class="financial-placeholder-text">Financial data not provided</span></div>';
+            }
             
             let html = '<div class="financial-info">';
             financialData.forEach(item => {
@@ -1290,6 +1316,7 @@
             });
             html += '</div>';
             
+            console.log('Generated financial HTML:', html);
             return html;
         }
 

@@ -580,6 +580,7 @@ class ApartmentReview {
                 : null;
 
             // Prepare review data for Supabase using the correct column names
+            // Note: overall_rating is a generated column and will be calculated automatically
             const reviewData = {
                 user_id: currentUser.id,
                 apartment_name: this.selectedApartment.name,
@@ -588,7 +589,6 @@ class ApartmentReview {
                 maintenance_rating: this.ratings.maintenance || null,
                 management_rating: this.ratings.management || null,
                 amenities_rating: this.ratings.amenities || null,
-                overall_rating: overallRating,
                 written_review: writtenReview || null
             };
 
