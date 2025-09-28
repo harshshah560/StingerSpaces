@@ -4,10 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apartment Details - StingerSpaces</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
         crossorigin="anonymous" />
+    
+    <!-- Supabase JS -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://dbkmzqknpvzumthytnyw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRia216cWtucHZ6dW10aHl0bnl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MzUyNzQsImV4cCI6MjA3NDUxMTI3NH0.B0wXbXmKHW1iJzmMfOsi4_-fnl_qZUduE2CYn2AOlKE';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
     <style>
         :root {
             --gt-gold: #B3A369;
@@ -23,7 +37,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Roboto', sans-serif;
             background-color: var(--light-gray);
             line-height: 1.6;
         }
@@ -69,13 +83,43 @@
             padding: 20px;
         }
 
-        .apartment-header {
+        .top-layout {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .header-section {
+            flex: 0 0 48%;
             background: white;
             padding: 30px;
             border-radius: 8px;
             box-shadow: var(--shadow);
-            margin-bottom: 20px;
         }
+
+        .image-section {
+            flex: 1;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .map-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .full-map {
+            height: 500px;
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+
 
         .apartment-name {
             font-size: 32px;
@@ -114,19 +158,7 @@
             color: var(--gt-navy);
         }
 
-        .content-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .image-section, .map-section {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-        }
+        /* Image and map sections now styled individually in top-layout and map-section */
 
         .section-title {
             font-size: 20px;
@@ -156,8 +188,12 @@
         }
 
         @media (max-width: 768px) {
-            .content-grid {
-                grid-template-columns: 1fr;
+            .top-layout {
+                flex-direction: column;
+            }
+            
+            .header-section {
+                flex: none;
             }
             
             .apartment-meta {
@@ -195,6 +231,414 @@
             background: #ffebee;
             border-radius: 8px;
             margin: 20px 0;
+        }
+
+        /* Proximity information now displayed on map - no separate section needed */
+
+        /* Reviews Section */
+        .reviews-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+        }
+
+        .reviews-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .reviews-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--gt-navy);
+        }
+
+        .reviews-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .rating-category {
+            text-align: center;
+        }
+
+        .category-name {
+            font-size: 14px;
+            color: var(--gt-navy);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .rating-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .star {
+            color: #ddd;
+            font-size: 18px;
+        }
+
+        .star.filled {
+            color: #ffc107;
+        }
+
+        .star.half {
+            background: linear-gradient(90deg, #ffc107 50%, #ddd 50%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .rating-score {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--gt-navy);
+        }
+
+        .rating-count {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .overall-rating {
+            grid-column: 1 / -1;
+            border-top: 2px solid var(--gt-gold);
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .overall-rating .category-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .overall-rating .rating-score {
+            font-size: 24px;
+        }
+
+        .overall-rating .star {
+            font-size: 24px;
+        }
+
+        .individual-reviews {
+            border-top: 1px solid #eee;
+            padding-top: 25px;
+        }
+
+        .reviews-list-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--gt-navy);
+            margin-bottom: 20px;
+        }
+
+        .review-item {
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .review-author {
+            font-weight: 500;
+            color: var(--gt-navy);
+        }
+
+        .review-date {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .review-ratings {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 12px;
+        }
+
+        .review-category-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+
+        .review-category-rating .star {
+            font-size: 14px;
+        }
+
+        .review-text {
+            color: #333;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .no-reviews {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .add-review-btn {
+            background-color: var(--gt-gold);
+            color: var(--gt-navy);
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        .add-review-btn:hover {
+            background-color: var(--gt-navy);
+            color: white;
+        }
+
+        .loading-reviews {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .reviews-error {
+            text-align: center;
+            padding: 40px;
+            color: #d32f2f;
+            background: #ffebee;
+            border-radius: 8px;
+        }
+
+        /* Compact review styles */
+        .review-item-compact {
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: #fafafa;
+        }
+
+        .review-header-compact {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .review-ratings-compact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .overall-compact {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 500;
+            color: var(--gt-navy);
+            font-size: 13px;
+        }
+
+        .top-category-compact {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .review-date-compact {
+            font-size: 11px;
+            color: #999;
+            margin-left: auto;
+        }
+
+        .review-text-compact {
+            color: #555;
+            line-height: 1.4;
+            font-size: 13px;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        /* Financial information styles */
+        .financial-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+            padding: 12px;
+            background: #f0f8ff;
+            border-radius: 6px;
+            border-left: 4px solid var(--gt-gold);
+        }
+
+        .financial-item {
+            text-align: center;
+        }
+
+        .financial-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .financial-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--gt-navy);
+        }
+
+        .financial-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            border: 2px solid var(--gt-gold);
+        }
+
+        .financial-summary-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .financial-summary-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .financial-summary-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--gt-navy);
+        }
+
+        .financial-summary-note {
+            font-size: 10px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .more-reviews-notice {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+            font-size: 12px;
+            border-top: 1px solid #eee;
+            margin-top: 10px;
+        }
+
+        .review-item-compact .star {
+            font-size: 12px;
+        }
+
+        .financial-preview {
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            border-left: 4px solid var(--gt-gold);
+        }
+
+        .financial-preview-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--gt-navy);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .financial-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .financial-preview-item {
+            text-align: center;
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .financial-preview-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .financial-preview-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--gt-navy);
+        }
+
+        .financial-preview-note {
+            font-size: 9px;
+            color: #888;
+            margin-top: 1px;
+        }
+
+        @media (max-width: 768px) {
+            .review-header-compact {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .review-date-compact {
+                margin-left: 0;
+                align-self: flex-end;
+            }
+            
+            .financial-preview-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
@@ -241,6 +685,8 @@
                 return null;
             }
         }
+
+        // Proximity information is now displayed as markers on the map
 
         // Simple geocoding function using session storage cache
         const GEOCACHE_KEY = 'stingerspaces_geocache';
@@ -294,27 +740,158 @@
             }
         }
 
-        // Create mini map
-        function createMiniMap(apartment) {
+        // Create full map with campus proximity markers
+        function createFullMap(apartment) {
             setTimeout(async () => {
                 try {
-                    const coords = await geocodeAddress(apartment.formatted_address);
-                    if (coords) {
-                        const miniMap = L.map('mini-map').setView([coords.lat, coords.lon], 15);
-                        
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            maxZoom: 19,
-                            attribution: '© OpenStreetMap contributors'
-                        }).addTo(miniMap);
-                        
-                        L.marker([coords.lat, coords.lon])
-                            .bindPopup(apartment.name)
-                            .addTo(miniMap);
+                    // Get apartment coordinates
+                    let apartmentCoords = null;
+                    if (apartment.coordinates && apartment.coordinates.length === 2) {
+                        apartmentCoords = { lat: apartment.coordinates[0], lon: apartment.coordinates[1] };
+                    } else {
+                        apartmentCoords = await geocodeAddress(apartment.formatted_address);
                     }
+                    
+                    if (!apartmentCoords) {
+                        document.getElementById('full-map').innerHTML = 
+                            '<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: #666;">Map unavailable</div>';
+                        return;
+                    }
+                    
+                    // Create map centered on apartment with appropriate zoom to show campus
+                    const fullMap = L.map('full-map').setView([apartmentCoords.lat, apartmentCoords.lon], 13);
+                    
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 19,
+                        attribution: '© OpenStreetMap contributors, © CARTO'
+                    }).addTo(fullMap);
+                    
+                    // Campus locations with coordinates
+                    const campusLocations = {
+                        'CULC': { coords: [33.7747, -84.3965], name: 'CULC', color: '#e74c3c' },
+                        'CRC': { coords: [33.7758, -84.4041], name: 'Recreation Center', color: '#2ecc71' },
+                        'Tech Square': { coords: [33.7777, -84.3888], name: 'Technology Square', color: '#f39c12' },
+                        'Student Center': { coords: [33.7738, -84.3986], name: 'Student Center', color: '#9b59b6' }
+                    };
+                    
+                    // Add MARTA station if available in proximities
+                    if (apartment.proximities && apartment.proximities.MARTA) {
+                        // Common MARTA stations coordinates
+                        const martaStations = {
+                            'North Avenue MARTA': [33.7717, -84.3872],
+                            'Midtown MARTA': [33.7809, -84.3863],
+                            'Arts Center MARTA': [33.7890, -84.3871]
+                        };
+                        
+                        const martaName = apartment.proximities.MARTA.name;
+                        if (martaStations[martaName]) {
+                            campusLocations['MARTA'] = { 
+                                coords: martaStations[martaName], 
+                                name: martaName, 
+                                color: '#3498db' 
+                            };
+                        }
+                    }
+                    
+                    // Add apartment marker (home icon with label)
+                    const apartmentIcon = L.divIcon({
+                        html: `
+                            <div style="
+                                background: white;
+                                width: 24px; 
+                                height: 24px; 
+                                border-radius: 4px; 
+                                border: 2px solid #003057; 
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#003057">
+                                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                                </svg>
+                            </div>
+                            <div style="
+                                position: absolute; 
+                                top: -28px; 
+                                left: 50%; 
+                                transform: translateX(-50%); 
+                                background: white; 
+                                padding: 3px 8px; 
+                                border-radius: 4px; 
+                                font-size: 11px; 
+                                font-weight: bold; 
+                                color: #003057; 
+                                border: 2px solid #003057;
+                                white-space: nowrap;
+                                box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                            ">${apartment.name}</div>
+                        `,
+                        className: 'custom-apartment-marker',
+                        iconSize: [28, 28],
+                        iconAnchor: [14, 14]
+                    });
+                    
+                    L.marker([apartmentCoords.lat, apartmentCoords.lon], { icon: apartmentIcon })
+                        .bindPopup(`<strong>${apartment.name}</strong><br>${apartment.formatted_address}`)
+                        .addTo(fullMap);
+                    
+                    // Add campus location markers
+                    Object.entries(campusLocations).forEach(([key, location]) => {
+                        const campusIcon = L.divIcon({
+                            html: `
+                                <div style="
+                                    background-color: ${location.color}; 
+                                    width: 16px; 
+                                    height: 16px; 
+                                    border-radius: 50%; 
+                                    border: 2px solid white; 
+                                    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                                "></div>
+                                <div style="
+                                    position: absolute; 
+                                    top: -25px; 
+                                    left: 50%; 
+                                    transform: translateX(-50%); 
+                                    background: white; 
+                                    padding: 2px 6px; 
+                                    border-radius: 3px; 
+                                    font-size: 10px; 
+                                    font-weight: bold; 
+                                    color: ${location.color}; 
+                                    border: 1px solid ${location.color};
+                                    white-space: nowrap;
+                                ">${location.name}</div>
+                            `,
+                            className: 'custom-campus-marker',
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        });
+                        
+                        let popupContent = `<strong>${location.name}</strong>`;
+                        if (apartment.proximities && apartment.proximities[key]) {
+                            const prox = apartment.proximities[key];
+                            popupContent += `<br>${prox.distance_miles} miles<br>${prox.walking_time_text}`;
+                        }
+                        
+                        L.marker(location.coords, { icon: campusIcon })
+                            .bindPopup(popupContent)
+                            .addTo(fullMap);
+                    });
+                    
+                    // Fit map to show all markers
+                    const allCoords = [
+                        [apartmentCoords.lat, apartmentCoords.lon],
+                        ...Object.values(campusLocations).map(loc => loc.coords)
+                    ];
+                    
+                    const group = new L.LatLngBounds(allCoords);
+                    fullMap.fitBounds(group, { padding: [20, 20] });
+                    
                 } catch (error) {
-                    console.error('Error creating mini map:', error);
-                    document.getElementById('mini-map').innerHTML = 
-                        '<div style="display: flex; align-items: center; justify-content: center; height: 300px; color: #666;">Map unavailable</div>';
+                    console.error('Error creating full map:', error);
+                    document.getElementById('full-map').innerHTML = 
+                        '<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: #666;">Map unavailable</div>';
                 }
             }, 100);
         }
@@ -344,35 +921,40 @@
         // Render apartment details
         function renderApartment(apartmentName, apartmentInfo, summary, commentCount) {
             const html = `
-                <div class="apartment-header">
-                    <div class="apartment-name">${apartmentName}</div>
-                    <div class="apartment-price">${apartmentInfo.price_range}</div>
-                    
-                    <div class="apartment-meta">
-                        <div class="meta-item">
-                            <div class="meta-label">Address</div>
-                            <div class="meta-value">${apartmentInfo.formatted_address}</div>
-                        </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Phone</div>
-                            <div class="meta-value">${apartmentInfo.phone}</div>
-                        </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Bedrooms</div>
-                            <div class="meta-value">${apartmentInfo.bed_range}</div>
-                        </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Source</div>
-                            <div class="meta-value">
-                                <a href="${apartmentInfo.url}" target="_blank" style="color: var(--gt-navy);">View on Apartments.com</a>
+                <div class="top-layout">
+                    <div class="header-section">
+                        <div class="apartment-name">${apartmentName}</div>
+                        <div class="apartment-price">${apartmentInfo.price_range}</div>
+                        
+                        <div class="apartment-meta">
+                            <div class="meta-item">
+                                <div class="meta-label">Address</div>
+                                <div class="meta-value">${apartmentInfo.formatted_address}</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-label">Phone</div>
+                                <div class="meta-value">${apartmentInfo.phone}</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-label">Bedrooms</div>
+                                <div class="meta-value">${apartmentInfo.bed_range}</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-label">Source</div>
+                                <div class="meta-value">
+                                    <a href="${apartmentInfo.url}" target="_blank" style="color: var(--gt-navy);">View on Apartments.com</a>
+                                </div>
                             </div>
                         </div>
+
+                        <div id="financial-preview" class="financial-preview" style="display: none;">
+                            <div class="financial-preview-title">💰 Average Monthly Costs (from reviews)</div>
+                            <div id="financial-preview-content"></div>
+                        </div>
+
+                        <a href="tel:${apartmentInfo.phone}" class="contact-btn">Call ${apartmentInfo.phone}</a>
                     </div>
-
-                    <a href="tel:${apartmentInfo.phone}" class="contact-btn">Call ${apartmentInfo.phone}</a>
-                </div>
-
-                <div class="content-grid">
+                    
                     <div class="image-section">
                         <div class="section-title">Property Image</div>
                         ${apartmentInfo.image_base64 ? 
@@ -380,20 +962,437 @@
                             '<div class="apartment-image">No image available</div>'
                         }
                     </div>
-                    
-                    <div class="map-section">
-                        <div class="section-title">Location</div>
-                        <div id="mini-map" class="mini-map"></div>
-                    </div>
                 </div>
 
+                <div class="map-section">
+                    <div class="section-title">Location & Campus Proximity</div>
+                    <div id="full-map" class="full-map"></div>
+                </div>
+
+                <div class="reviews-section">
+                    <div class="reviews-header">
+                        <h2 class="reviews-title">Reviews & Ratings</h2>
+                        <a href="apartment-review.html?name=${encodeURIComponent(apartmentName)}" class="add-review-btn">Add Review</a>
+                    </div>
+                    <div id="reviews-content">
+                        <div class="loading-reviews">Loading reviews...</div>
+                    </div>
+                </div>
 
             `;
             
             document.getElementById('apartment-details').innerHTML = html;
             
-            // Create the mini map after DOM is updated
-            createMiniMap(apartmentInfo);
+            // Create the full map after DOM is updated
+            createFullMap(apartmentInfo);
+            
+            // Load and render reviews using apartment name
+            loadAndRenderReviews(apartmentName);
+        }
+
+        // Load and render reviews for the apartment
+        async function loadAndRenderReviews(apartmentName) {
+            const reviewsContent = document.getElementById('reviews-content');
+            
+            try {
+                // Fetch reviews from Supabase using apartment_name
+                const { data: reviews, error } = await supabase
+                    .from('apartment_reviews')
+                    .select('*')
+                    .eq('apartment_name', apartmentName)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Error fetching reviews:', error);
+                    reviewsContent.innerHTML = '<div class="reviews-error">Unable to load reviews. Please try again later.</div>';
+                    return;
+                }
+
+                if (!reviews || reviews.length === 0) {
+                    reviewsContent.innerHTML = `
+                        <div class="no-reviews">
+                            <h3>No reviews yet</h3>
+                            <p>Be the first to review this apartment!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Calculate average ratings for each category using correct column names
+                const categories = ['safety_rating', 'proximity_grocery_rating', 'maintenance_rating', 'management_rating', 'amenities_rating', 'overall_rating'];
+                const averages = {};
+                const counts = {};
+
+                categories.forEach(category => {
+                    const validRatings = reviews
+                        .map(r => r[category])
+                        .filter(rating => rating !== null && rating !== undefined && rating > 0);
+                    
+                    if (validRatings.length > 0) {
+                        averages[category] = validRatings.reduce((sum, rating) => sum + rating, 0) / validRatings.length;
+                        counts[category] = validRatings.length;
+                    }
+                });
+
+                // Calculate financial averages
+                const financialCategories = ['monthly_rent', 'hidden_fees', 'utilities_cost', 'parking_cost'];
+                const financialAverages = {};
+                const financialCounts = {};
+
+                financialCategories.forEach(category => {
+                    const validCosts = reviews
+                        .map(r => r[category])
+                        .filter(cost => cost !== null && cost !== undefined && cost >= 0);
+                    
+                    if (validCosts.length > 0) {
+                        financialAverages[category] = validCosts.reduce((sum, cost) => sum + cost, 0) / validCosts.length;
+                        financialCounts[category] = validCosts.length;
+                    }
+                });
+
+                // Generate reviews summary HTML
+                const summaryHtml = generateReviewsSummary(averages, counts);
+                
+                // Generate financial summary HTML
+                const financialSummaryHtml = generateFinancialSummary(financialAverages, financialCounts);
+                
+                // Generate individual reviews HTML
+                const reviewsListHtml = generateReviewsList(reviews);
+
+                reviewsContent.innerHTML = summaryHtml + financialSummaryHtml + reviewsListHtml;
+
+                // Update financial preview in header if there's financial data
+                updateFinancialPreview(financialAverages, financialCounts);
+
+            } catch (error) {
+                console.error('Error loading reviews:', error);
+                reviewsContent.innerHTML = '<div class="reviews-error">Unable to load reviews. Please try again later.</div>';
+            }
+        }
+
+        // Generate the reviews summary section
+        function generateReviewsSummary(averages, counts) {
+            const categoryLabels = {
+                safety_rating: 'Safety',
+                proximity_grocery_rating: 'Proximity to Groceries',
+                maintenance_rating: 'Maintenance',
+                management_rating: 'Management',
+                amenities_rating: 'Amenities',
+                overall_rating: 'Overall'
+            };
+
+            let summaryHtml = '<div class="reviews-summary">';
+
+            // Add individual categories
+            Object.entries(categoryLabels).forEach(([key, label]) => {
+                if (key !== 'overall_rating' && averages[key]) {
+                    summaryHtml += `
+                        <div class="rating-category">
+                            <div class="category-name">${label}</div>
+                            <div class="rating-display">
+                                <div class="rating-stars">${generateStars(averages[key])}</div>
+                                <span class="rating-score">${averages[key].toFixed(1)}</span>
+                            </div>
+                            <div class="rating-count">${counts[key]} review${counts[key] !== 1 ? 's' : ''}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Add overall rating if available
+            if (averages.overall_rating) {
+                summaryHtml += `
+                    <div class="rating-category overall-rating">
+                        <div class="category-name">Overall Rating</div>
+                        <div class="rating-display">
+                            <div class="rating-stars">${generateStars(averages.overall_rating)}</div>
+                            <span class="rating-score">${averages.overall_rating.toFixed(1)}</span>
+                        </div>
+                        <div class="rating-count">Based on ${counts.overall_rating} review${counts.overall_rating !== 1 ? 's' : ''}</div>
+                    </div>
+                `;
+            }
+
+            summaryHtml += '</div>';
+            return summaryHtml;
+        }
+
+        // Generate financial summary section
+        function generateFinancialSummary(financialAverages, financialCounts) {
+            const hasFinancialData = Object.keys(financialAverages).length > 0;
+            
+            if (!hasFinancialData) return '';
+
+            const financialLabels = {
+                monthly_rent: 'Monthly Rent',
+                hidden_fees: 'Hidden Fees',
+                utilities_cost: 'Utilities',
+                parking_cost: 'Parking'
+            };
+
+            let summaryHtml = `
+                <div class="financial-summary">
+                    <div style="grid-column: 1 / -1; text-align: center; margin-bottom: 10px;">
+                        <h3 style="color: var(--gt-navy); margin: 0;">💰 Average Monthly Costs</h3>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Based on resident reviews</p>
+                    </div>
+            `;
+
+            Object.entries(financialLabels).forEach(([key, label]) => {
+                if (financialAverages[key] !== undefined) {
+                    const avg = financialAverages[key];
+                    const count = financialCounts[key];
+                    
+                    summaryHtml += `
+                        <div class="financial-summary-item">
+                            <div class="financial-summary-label">${label}</div>
+                            <div class="financial-summary-value">$${avg.toFixed(0)}</div>
+                            <div class="financial-summary-note">${count} report${count !== 1 ? 's' : ''}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Calculate total monthly cost
+            const totalCost = Object.values(financialAverages).reduce((sum, cost) => sum + cost, 0);
+            if (totalCost > 0) {
+                summaryHtml += `
+                    <div class="financial-summary-item" style="border: 2px solid var(--gt-gold); background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
+                        <div class="financial-summary-label">Total Monthly</div>
+                        <div class="financial-summary-value" style="font-size: 20px; color: var(--gt-gold);">$${totalCost.toFixed(0)}</div>
+                        <div class="financial-summary-note">Estimated per person</div>
+                    </div>
+                `;
+            }
+
+            summaryHtml += '</div>';
+            return summaryHtml;
+        }
+
+        // Generate individual reviews list (shortened format)
+        function generateReviewsList(reviews) {
+            if (reviews.length === 0) return '';
+
+            // Filter to only show reviews that have written content
+            const reviewsWithText = reviews.filter(review => 
+                review.written_review && review.written_review.trim()
+            );
+
+            if (reviewsWithText.length === 0) return '';
+
+            // Limit to most recent 10 reviews with written content
+            const displayReviews = reviewsWithText.slice(0, 10);
+
+            let html = `
+                <div class="individual-reviews">
+                    <div class="reviews-list-header">Recent Reviews (${displayReviews.length}${reviewsWithText.length > 10 ? ` of ${reviewsWithText.length}` : ''} with written comments)</div>
+            `;
+
+            displayReviews.forEach(review => {
+                const reviewDate = new Date(review.created_at).toLocaleDateString();
+                
+                // Shorten the written review to max 150 characters
+                let shortReview = '';
+                if (review.written_review && review.written_review.trim()) {
+                    const trimmedReview = review.written_review.trim();
+                    shortReview = trimmedReview.length > 150 
+                        ? trimmedReview.substring(0, 150) + '...' 
+                        : trimmedReview;
+                }
+                
+                // Show only overall rating + one highest category rating for compact display
+                const topRating = getTopCategoryRating(review);
+                
+                // Generate financial info for this review
+                const financialInfo = generateFinancialInfo(review);
+                
+                html += `
+                    <div class="review-item-compact">
+                        <div class="review-header-compact">
+                            <div class="review-ratings-compact">
+                                ${review.overall_rating ? `<span class="overall-compact">Overall: ${generateStars(review.overall_rating)} (${review.overall_rating})</span>` : ''}
+                                ${topRating ? `<span class="top-category-compact">${topRating.label}: ${generateStars(topRating.value)}</span>` : ''}
+                            </div>
+                            <span class="review-date-compact">${reviewDate}</span>
+                        </div>
+                        ${financialInfo}
+                        ${shortReview && shortReview.trim() ? `<div class="review-text-compact">"${shortReview}"</div>` : ''}
+                    </div>
+                `;
+            });
+
+            if (reviewsWithText.length > 10) {
+                html += `
+                    <div class="more-reviews-notice">
+                        <em>Showing most recent 10 written reviews. ${reviewsWithText.length - 10} more written reviews available.</em>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        // Generate category ratings for individual review
+        function generateCategoryRatings(review) {
+            const categories = {
+                safety_rating: 'Safety',
+                proximity_grocery_rating: 'Proximity',
+                maintenance_rating: 'Maintenance',
+                management_rating: 'Management',
+                amenities_rating: 'Amenities',
+                overall_rating: 'Overall'
+            };
+
+            let html = '';
+            Object.entries(categories).forEach(([key, label]) => {
+                if (review[key] && review[key] > 0) {
+                    html += `
+                        <div class="review-category-rating">
+                            <span>${label}:</span>
+                            <div class="rating-stars">${generateStars(review[key])}</div>
+                            <span>(${review[key]})</span>
+                        </div>
+                    `;
+                }
+            });
+
+            return html;
+        }
+
+        // Generate financial information for individual review
+        function generateFinancialInfo(review) {
+            const financialData = [];
+            
+            if (review.monthly_rent && review.monthly_rent > 0) {
+                financialData.push({ label: 'Rent', value: `$${review.monthly_rent}` });
+            }
+            if (review.hidden_fees && review.hidden_fees > 0) {
+                financialData.push({ label: 'Fees', value: `$${review.hidden_fees}` });
+            }
+            if (review.utilities_cost !== null && review.utilities_cost !== undefined) {
+                financialData.push({ label: 'Utilities', value: `$${review.utilities_cost}` });
+            }
+            if (review.parking_cost !== null && review.parking_cost !== undefined) {
+                financialData.push({ label: 'Parking', value: review.parking_cost === 0 ? 'Free' : `$${review.parking_cost}` });
+            }
+            
+            if (financialData.length === 0) return '';
+            
+            let html = '<div class="financial-info">';
+            financialData.forEach(item => {
+                html += `
+                    <div class="financial-item">
+                        <div class="financial-label">${item.label}</div>
+                        <div class="financial-value">${item.value}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            return html;
+        }
+
+        // Get the highest rated category for compact display
+        function getTopCategoryRating(review) {
+            const categories = {
+                safety_rating: 'Safety',
+                proximity_grocery_rating: 'Proximity',
+                maintenance_rating: 'Maintenance',
+                management_rating: 'Management',
+                amenities_rating: 'Amenities'
+            };
+
+            let topCategory = null;
+            let topValue = 0;
+
+            Object.entries(categories).forEach(([key, label]) => {
+                if (review[key] && review[key] > topValue) {
+                    topValue = review[key];
+                    topCategory = { key, label, value: review[key] };
+                }
+            });
+
+            return topCategory;
+        }
+
+        // Generate star display for a rating
+        function generateStars(rating) {
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 >= 0.5;
+            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+            let starsHtml = '';
+            
+            // Full stars
+            for (let i = 0; i < fullStars; i++) {
+                starsHtml += '<span class="star filled">★</span>';
+            }
+            
+            // Half star
+            if (hasHalfStar) {
+                starsHtml += '<span class="star half">★</span>';
+            }
+            
+            // Empty stars
+            for (let i = 0; i < emptyStars; i++) {
+                starsHtml += '<span class="star">★</span>';
+            }
+
+            return starsHtml;
+        }
+
+        // Update financial preview in the apartment header
+        function updateFinancialPreview(financialAverages, financialCounts) {
+            const previewSection = document.getElementById('financial-preview');
+            const previewContent = document.getElementById('financial-preview-content');
+            
+            const hasFinancialData = Object.keys(financialAverages).length > 0;
+            
+            if (!hasFinancialData) {
+                previewSection.style.display = 'none';
+                return;
+            }
+
+            const financialLabels = {
+                monthly_rent: 'Monthly Rent',
+                hidden_fees: 'Hidden Fees',
+                utilities_cost: 'Utilities',
+                parking_cost: 'Parking'
+            };
+
+            let previewHtml = '<div class="financial-preview-grid">';
+
+            Object.entries(financialLabels).forEach(([key, label]) => {
+                if (financialAverages[key] !== undefined) {
+                    const avg = financialAverages[key];
+                    const count = financialCounts[key];
+                    
+                    previewHtml += `
+                        <div class="financial-preview-item">
+                            <div class="financial-preview-label">${label}</div>
+                            <div class="financial-preview-value">$${avg.toFixed(0)}</div>
+                            <div class="financial-preview-note">${count} review${count !== 1 ? 's' : ''}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Calculate and show total monthly cost
+            const totalCost = Object.values(financialAverages).reduce((sum, cost) => sum + cost, 0);
+            if (totalCost > 0) {
+                previewHtml += `
+                    <div class="financial-preview-item" style="border: 2px solid var(--gt-gold); background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
+                        <div class="financial-preview-label">Total Monthly</div>
+                        <div class="financial-preview-value" style="font-size: 18px; color: var(--gt-gold);">$${totalCost.toFixed(0)}</div>
+                        <div class="financial-preview-note">Est. per person</div>
+                    </div>
+                `;
+            }
+
+            previewHtml += '</div>';
+            previewContent.innerHTML = previewHtml;
+            previewSection.style.display = 'block';
         }
 
         // Initialize page

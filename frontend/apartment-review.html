@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Your Apartment - StingerSpaces</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Supabase JS -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Google Maps API with new Places library -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBv7At7YSjsUBgGUAJMd6_o-MTH1AB9QTE&libraries=places&loading=async"></script>
+    
+    <link rel="stylesheet" href="auth/css/auth-styles.css">
+    <style>
+        :root {
+            --gt-navy: #003057;
+            --gt-gold: #B3A369;
+        }
+
+        * {
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        .review-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--gt-navy) 0%, #1a4a72 100%);
+            padding: 20px;
+        }
+
+        .review-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--gt-navy);
+            margin-bottom: 10px;
+        }
+
+        .instruction {
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .apartment-search {
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--gt-navy);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--gt-gold);
+        }
+
+        .search-btn {
+            background: var(--gt-gold);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: #9a8c56;
+        }
+
+        .search-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .search-results {
+            margin-top: 20px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .search-result-item:hover {
+            background: #e9ecef;
+            border-color: var(--gt-gold);
+        }
+
+        .search-result-item.selected {
+            background: linear-gradient(135deg, #fff8e1, #fefdf8);
+            border-color: var(--gt-gold);
+        }
+
+        .result-name {
+            font-weight: 600;
+            color: var(--gt-navy);
+            margin-bottom: 5px;
+        }
+
+        .result-address {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .result-distance {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .result-rating {
+            color: #f39c12;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .selected-apartment {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border: 1px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .selected-apartment.show {
+            display: block;
+        }
+
+        .selected-apartment h4 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+
+        /* Smart search result indicators */
+        .smart-result {
+            position: relative;
+        }
+
+        .action-indicator {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .exact-match {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .fuzzy-match {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .new-apartment-verified {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .new-apartment-unverified {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        /* Suggestion interface styles */
+        .suggestions-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .no-match-message {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+
+        .suggestions-subtitle {
+            font-size: 12px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .suggestion-item {
+            border-left: 3px solid #007bff;
+        }
+
+        .manual-creation-item {
+            border-left: 3px solid #6c757d;
+        }
+
+        .suggestion-note {
+            font-size: 11px;
+            color: #6c757d;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        .local-match {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .local-suggestion {
+            border-left: 3px solid #4caf50;
+        }
+
+        .google-suggestion {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .manual-creation {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .confirmed-google {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .confirmed-manual {
+            background: #fff8e1;
+            color: #f57c00;
+        }
+
+        .confirmed-apartment {
+            border: 2px solid #28a745;
+            background: #f8fff8;
+        }
+
+        .user-contributed {
+            font-size: 11px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .result-phone {
+            font-size: 12px;
+            color: #495057;
+        }
+
+        .selected-apartment p {
+            color: #155724;
+            margin: 5px 0;
+        }
+
+        .rating-section {
+            display: none;
+            text-align: left;
+            margin-top: 30px;
+        }
+
+        .rating-section.active {
+            display: block;
+        }
+
+        .rating-item {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .rating-item:hover {
+            background: #e9ecef;
+        }
+
+        .rating-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .rating-star {
+            cursor: pointer;
+            font-size: 24px;
+            color: #ddd;
+            transition: color 0.2s;
+        }
+
+        .rating-star.active {
+            color: #ffc107;
+        }
+
+        .rating-star:hover {
+            color: #ffc107;
+        }
+
+        .continue-btn {
+            background: linear-gradient(135deg, var(--gt-navy), #1a4a72);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 30px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .continue-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .continue-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .no-results, .search-error {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .search-error {
+            color: #dc3545;
+        }
+
+        .loading-results {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Map</a>
+    
+    <div class="review-container">
+        <div class="review-card">
+            <div class="section-title">🏠 Rate Your Apartment Experience</div>
+            <div class="instruction">Help fellow Georgia Tech students by sharing your apartment experience</div>
+
+            <!-- Apartment Search Section -->
+            <div id="apartment-search-section" class="apartment-search">
+                <div class="form-group">
+                    <label for="apartment-search-input">Which apartment did you live at?</label>
+                    <input type="text" id="apartment-search-input" class="form-input" 
+                           placeholder="e.g., Square on 5th, The Connector, etc." required>
+                    <button type="button" id="search-apartment-btn" class="search-btn">Search</button>
+                </div>
+                
+                <div id="search-results" class="search-results"></div>
+                <div id="selected-apartment" class="selected-apartment"></div>
+                
+                <button id="apartment-confirm" class="continue-btn" style="display: none;">Continue to Rating</button>
+            </div>
+
+            <!-- Rating Section -->
+            <div id="rating-section" class="rating-section">
+                <div class="section-title">Rate Your Experience</div>
+                <div class="instruction">Rate each category from 1-5 stars based on your experience at <span id="selected-apartment-name"></span></div>
+                
+                <div id="rating-list">
+                    <div class="rating-item" data-category="safety">
+                        <span>🛡️ Safety</span>
+                        <div class="rating-controls">
+                            <span class="rating-star" data-rating="1">★</span>
+                            <span class="rating-star" data-rating="2">★</span>
+                            <span class="rating-star" data-rating="3">★</span>
+                            <span class="rating-star" data-rating="4">★</span>
+                            <span class="rating-star" data-rating="5">★</span>
+                        </div>
+                    </div>
+                    <div class="rating-item" data-category="proximity_grocery">
+                        <span>🛒 Proximity to Groceries</span>
+                        <div class="rating-controls">
+                            <span class="rating-star" data-rating="1">★</span>
+                            <span class="rating-star" data-rating="2">★</span>
+                            <span class="rating-star" data-rating="3">★</span>
+                            <span class="rating-star" data-rating="4">★</span>
+                            <span class="rating-star" data-rating="5">★</span>
+                        </div>
+                    </div>
+                    <div class="rating-item" data-category="maintenance">
+                        <span>🔧 Maintenance</span>
+                        <div class="rating-controls">
+                            <span class="rating-star" data-rating="1">★</span>
+                            <span class="rating-star" data-rating="2">★</span>
+                            <span class="rating-star" data-rating="3">★</span>
+                            <span class="rating-star" data-rating="4">★</span>
+                            <span class="rating-star" data-rating="5">★</span>
+                        </div>
+                    </div>
+                    <div class="rating-item" data-category="management">
+                        <span>👥 Management</span>
+                        <div class="rating-controls">
+                            <span class="rating-star" data-rating="1">★</span>
+                            <span class="rating-star" data-rating="2">★</span>
+                            <span class="rating-star" data-rating="3">★</span>
+                            <span class="rating-star" data-rating="4">★</span>
+                            <span class="rating-star" data-rating="5">★</span>
+                        </div>
+                    </div>
+                    <div class="rating-item" data-category="amenities">
+                        <span>🏊‍♂️ Amenities</span>
+                        <div class="rating-controls">
+                            <span class="rating-star" data-rating="1">★</span>
+                            <span class="rating-star" data-rating="2">★</span>
+                            <span class="rating-star" data-rating="3">★</span>
+                            <span class="rating-star" data-rating="4">★</span>
+                            <span class="rating-star" data-rating="5">★</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Information Section -->
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <h3 style="color: var(--gt-navy); margin-bottom: 15px; font-size: 18px;">💰 Monthly Costs (Help future residents!)</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">This information helps other students understand the real cost of living here.</p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label for="monthly-rent">Monthly Rent (per person)</label>
+                            <input type="number" id="monthly-rent" class="form-input" placeholder="1200" min="0" step="1">
+                            <small style="color: #666;">Your share of the rent</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hidden-fees">Hidden Fees (per month)</label>
+                            <input type="number" id="hidden-fees" class="form-input" placeholder="50" min="0" step="1">
+                            <small style="color: #666;">Admin fees, amenity fees, etc.</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="utilities-cost">Utilities (per month)</label>
+                            <input type="number" id="utilities-cost" class="form-input" placeholder="80" min="0" step="1">
+                            <small style="color: #666;">Electricity, water, internet, etc.</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="parking-cost">Parking (per month)</label>
+                            <input type="number" id="parking-cost" class="form-input" placeholder="0" min="0" step="1">
+                            <small style="color: #666;">Enter 0 if free</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Written Review Section -->
+                <div style="margin-top: 30px;">
+                    <label for="written-review" style="
+                        display: block;
+                        font-weight: 600;
+                        margin-bottom: 10px;
+                        color: var(--gt-navy);
+                        font-size: 16px;
+                    ">✍️ Write a Review (Optional)</label>
+                    <textarea id="written-review" 
+                              placeholder="Share your experience living at this apartment... What did you like? What could be improved? Any tips for future residents?"
+                              style="
+                                  width: 100%;
+                                  min-height: 120px;
+                                  padding: 12px;
+                                  border: 2px solid #e0e0e0;
+                                  border-radius: 8px;
+                                  font-family: inherit;
+                                  font-size: 14px;
+                                  line-height: 1.5;
+                                  resize: vertical;
+                                  transition: border-color 0.3s ease;
+                              "
+                              onfocus="this.style.borderColor='var(--gt-gold)'"
+                              onblur="this.style.borderColor='#e0e0e0'"
+                              maxlength="1000"></textarea>
+                    <div style="
+                        text-align: right;
+                        font-size: 12px;
+                        color: #666;
+                        margin-top: 5px;
+                    ">
+                        <span id="review-char-count">0</span>/1000 characters
+                    </div>
+                </div>
+
+                <button id="submit-review" class="continue-btn">Submit Review</button>
+            </div>
+
+            <!-- Success Section -->
+            <div id="success-section" class="rating-section">
+                <div class="section-title">🎉 Thank You!</div>
+                <p>Your review has been submitted successfully. Your feedback helps other Georgia Tech students make better housing decisions!</p>
+                <button id="back-to-map" class="continue-btn">Back to Map</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth scripts -->
+    <script src="auth/js/auth-config.js"></script>
+    
+    <!-- Review scripts -->
+    <script src="js/smart-apartment-matcher.js"></script>
+    <script src="js/apartment-review.js"></script>
+</body>
+</html>

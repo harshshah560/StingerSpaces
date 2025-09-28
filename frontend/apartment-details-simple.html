@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartment Details - StingerSpaces</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gt-gold: #B3A369;
+            --gt-navy: #003057;
+            --light-gray: #f5f5f5;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-gray);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--gt-navy);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-left h1 {
+            color: var(--gt-gold);
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .back-btn {
+            background-color: var(--gt-gold);
+            color: var(--gt-navy);
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background-color: #9B8A5A;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .apartment-header {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .apartment-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--gt-navy);
+            margin-bottom: 10px;
+        }
+
+        .apartment-price {
+            font-size: 24px;
+            color: var(--gt-gold);
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .apartment-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-weight: bold;
+            color: var(--gt-navy);
+            margin-bottom: 4px;
+        }
+
+        .meta-value {
+            color: #666;
+        }
+
+        .reddit-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .reddit-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--gt-navy);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .reddit-icon {
+            background: #ff4500;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .reddit-content {
+            color: #333;
+            line-height: 1.8;
+        }
+
+        .reddit-content strong {
+            color: var(--gt-navy);
+        }
+
+        .reddit-content ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .reddit-content li {
+            margin-bottom: 8px;
+        }
+
+        .no-reddit-data {
+            color: #666;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #d32f2f;
+            background: #ffebee;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>StingerSpaces</h1>
+                <p>Georgia Tech Off-Campus Housing Finder</p>
+            </div>
+            <a href="index.html" class="back-btn">← Back to Map</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="apartment-details" class="loading">
+            Loading apartment details...
+        </div>
+    </div>
+
+    <script>
+        // Get apartment name from URL parameters
+        function getApartmentNameFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('apartment');
+        }
+
+        // Load apartment and consensus data
+        async function loadData() {
+            try {
+                const response = await fetch('apartments_with_consensus.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error loading data:', error);
+                return null;
+            }
+        }
+
+        // Format content for display
+        function formatContent(content) {
+            if (!content) return '';
+            
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^• (.+)$/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>')
+                .replace(/^/, '<p>')
+                .replace(/$/, '</p>')
+                .replace(/<p>(<ul>)/g, '$1')
+                .replace(/(<\/ul>)<\/p>/g, '$1')
+                .replace(/<br><li>/g, '<li>')
+                .replace(/<\/li><br>/g, '</li>')
+                .replace(/<p><\/p>/g, '')
+                .replace(/<p><p>/g, '<p>')
+                .replace(/<\/p><\/p>/g, '</p>')
+                .replace(/<p><br><\/p>/g, '');
+        }
+
+        // Render apartment details
+        function renderApartment(apartmentName, apartmentInfo, summary, commentCount) {
+            const html = `
+                <div class="apartment-header">
+                    <div class="apartment-name">${apartmentName}</div>
+                    <div class="apartment-price">${apartmentInfo.price_range}</div>
+                    
+                    <div class="apartment-meta">
+                        <div class="meta-item">
+                            <div class="meta-label">Address</div>
+                            <div class="meta-value">${apartmentInfo.formatted_address}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Phone</div>
+                            <div class="meta-value">${apartmentInfo.phone}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Bedrooms</div>
+                            <div class="meta-value">${apartmentInfo.bed_range}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Source</div>
+                            <div class="meta-value">
+                                <a href="${apartmentInfo.url}" target="_blank" style="color: var(--gt-navy);">View on Apartments.com</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reddit-section">
+                    <div class="reddit-title">
+                        <div class="reddit-icon">r</div>
+                        What People Say
+                        ${commentCount > 0 ? 
+                            `<span style="font-size: 14px; color: #666; font-weight: normal; background: #f0f0f0; padding: 4px 8px; border-radius: 12px;">${commentCount} comments analyzed</span>` : ''
+                        }
+                    </div>
+                    ${summary && summary.trim() ? 
+                        `<div class="reddit-content">${formatContent(summary)}</div>` :
+                        '<div class="no-reddit-data">No Reddit discussions found for this apartment complex.</div>'
+                    }
+                </div>
+            `;
+            
+            document.getElementById('apartment-details').innerHTML = html;
+        }
+
+        // Initialize page
+        async function init() {
+            const apartmentName = getApartmentNameFromURL();
+            
+            if (!apartmentName) {
+                document.getElementById('apartment-details').innerHTML = `
+                    <div class="error">
+                        <h2>No apartment specified</h2>
+                        <p>Please select an apartment from the main map.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Load data
+            const data = await loadData();
+            
+            if (!data) {
+                document.getElementById('apartment-details').innerHTML = `
+                    <div class="error">
+                        <h2>Error loading data</h2>
+                        <p>Could not load apartment information. Please try again.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Find apartment in new data structure
+            const apartmentData = data.apartments && data.apartments[apartmentName];
+            
+            if (!apartmentData) {
+                const availableApartments = data.apartments ? Object.keys(data.apartments) : [];
+                document.getElementById('apartment-details').innerHTML = `
+                    <div class="error">
+                        <h2>Apartment "${apartmentName}" not found</h2>
+                        <p>Available apartments: ${availableApartments.join(', ')}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render the apartment
+            renderApartment(
+                apartmentName,
+                apartmentData.apartment_info,
+                apartmentData.ai_summary,
+                apartmentData.comment_count || 0
+            );
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>

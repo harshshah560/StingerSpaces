@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StingerSpaces - Login</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Supabase JS -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Auth styles -->
+    <link rel="stylesheet" href="auth/css/auth-styles.css">
+    
+    <style>
+        :root {
+            --gt-gold: #B3A369;
+            --gt-navy: #003057;
+            --light-gray: #f5f5f5;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-gray);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <h1>StingerSpaces</h1>
+                <p>Georgia Tech Off-Campus Housing Reviews</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button id="login-tab" class="auth-tab">Sign In</button>
+                <button id="signup-tab" class="auth-tab">Sign Up</button>
+            </div>
+
+            <div id="error-message" class="error-message"></div>
+            <div id="success-message" class="success-message"></div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-email">Email Address</label>
+                    <input type="email" id="login-email" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-input" required>
+                </div>
+
+                <button type="submit" id="login-button" class="auth-button">
+                    <div class="loading-spinner"></div>
+                    <span class="button-text">Sign In</span>
+                </button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signup-form" class="auth-form">
+                <div class="form-group">
+                    <label for="signup-name">Full Name</label>
+                    <input type="text" id="signup-name" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-email">Email Address</label>
+                    <input type="email" id="signup-email" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" class="form-input" minlength="6" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirm Password</label>
+                    <input type="password" id="signup-confirm-password" class="form-input" minlength="6" required>
+                </div>
+
+                <button type="submit" id="signup-button" class="auth-button">
+                    <div class="loading-spinner"></div>
+                    <span class="button-text">Create Account</span>
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>By signing up, you agree to share reviews about your apartment experiences.</p>
+                <br>
+                <p><a href="index.html">← Back to Housing Map</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth scripts -->
+    <script src="auth/js/auth-config.js"></script>
+    <script src="auth/js/auth-ui.js"></script>
+</body>
+</html>
