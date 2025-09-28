@@ -126,6 +126,9 @@ class ApartmentReview {
             if (result.success) {
                 // Show the matched apartment with action info
                 this.displaySmartSearchResult(result);
+            } else if (result.isDuplicate) {
+                // Show duplicate warning with option to use existing or proceed anyway
+                this.displayDuplicateWarning(result, query);
             } else if (result.action === 'needs_confirmation') {
                 // Show suggestions and manual option
                 this.displaySuggestionResults(result, query);
@@ -458,6 +461,72 @@ class ApartmentReview {
         resultsContainer.innerHTML = '<div class="no-results">No apartments found. Try a different search term.</div>';
     }
 
+    displayDuplicateWarning(result, originalQuery) {
+        const resultsContainer = document.getElementById('search-results');
+        resultsContainer.innerHTML = '';
+
+        const existingApt = result.existingApartment;
+        const warningDiv = document.createElement('div');
+        warningDiv.className = 'duplicate-warning';
+        warningDiv.innerHTML = `
+            <div class="duplicate-header">
+                <div class="duplicate-icon">⚠️</div>
+                <div class="duplicate-title">Possible Duplicate Found</div>
+            </div>
+            <div class="duplicate-message">${result.message}</div>
+            
+            <div class="existing-apartment-info">
+                <h4>Existing Apartment:</h4>
+                <div class="apartment-details">
+                    <div class="apartment-name">${existingApt.name}</div>
+                    <div class="apartment-address">${existingApt.formatted_address}</div>
+                    ${existingApt.phone ? `<div class="apartment-phone">${existingApt.phone}</div>` : ''}
+                </div>
+            </div>
+            
+            <div class="duplicate-actions">
+                <button class="btn btn-primary use-existing-btn" data-apartment='${JSON.stringify(existingApt)}'>
+                    Use Existing Apartment
+                </button>
+                <button class="btn btn-secondary create-anyway-btn" data-query="${originalQuery}">
+                    Create "${originalQuery}" Anyway
+                </button>
+            </div>
+        `;
+
+        resultsContainer.appendChild(warningDiv);
+
+        // Add event listeners
+        const useExistingBtn = warningDiv.querySelector('.use-existing-btn');
+        const createAnywayBtn = warningDiv.querySelector('.create-anyway-btn');
+
+        useExistingBtn.addEventListener('click', () => {
+            this.selectApartment(existingApt);
+        });
+
+        createAnywayBtn.addEventListener('click', async () => {
+            // Force create the apartment by bypassing duplicate check
+            createAnywayBtn.textContent = 'Creating...';
+            createAnywayBtn.disabled = true;
+            
+            try {
+                // Call the apartment matcher to force create
+                const forceResult = await this.apartmentMatcher.forceCreateApartment(originalQuery);
+                if (forceResult.success) {
+                    this.displaySmartSearchResult(forceResult);
+                } else {
+                    this.showSearchError(forceResult.error || 'Failed to create apartment');
+                }
+            } catch (error) {
+                console.error('Error force creating apartment:', error);
+                this.showSearchError('Error creating apartment');
+            } finally {
+                createAnywayBtn.textContent = 'Create Anyway';
+                createAnywayBtn.disabled = false;
+            }
+        });
+    }
+
     showSearchError(message = 'Search error. Please try again.') {
         const resultsContainer = document.getElementById('search-results');
         resultsContainer.innerHTML = `<div class="search-error">${message}</div>`;
@@ -580,7 +649,7 @@ class ApartmentReview {
                 : null;
 
             // Prepare review data for Supabase using the correct column names
-            // Note: overall_rating is a generated column and will be calculated automatically
+            // Note: overall_rating is a computed column, so we don't include it in the insert
             const reviewData = {
                 user_id: currentUser.id,
                 apartment_name: this.selectedApartment.name,

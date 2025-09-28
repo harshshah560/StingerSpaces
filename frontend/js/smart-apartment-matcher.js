@@ -12,13 +12,214 @@ class SmartApartmentMatcher {
 
     async loadApartmentData() {
         try {
-            const response = await fetch('./apartment_data.json');
-            this.apartmentData = await response.json();
-            console.log(`Loaded ${this.apartmentData.length} apartments for matching`);
+            // Wait for Supabase client to be available
+            const waitForSupabase = () => {
+                return new Promise((resolve) => {
+                    const checkSupabase = () => {
+                        if (window.supabaseClient) {
+                            resolve();
+                        } else {
+                            setTimeout(checkSupabase, 100);
+                        }
+                    };
+                    checkSupabase();
+                });
+            };
+            
+            await waitForSupabase();
+            
+            // Fetch apartments directly from Supabase
+            const { data: supabaseApartments, error } = await window.supabaseClient
+                .from('apartments')
+                .select('*')
+                .order('name');
+
+            if (error) {
+                throw new Error(`Supabase error: ${error.message}`);
+            }
+
+            // Transform Supabase data to match expected format
+            this.apartmentData = supabaseApartments.map(apt => ({
+                name: apt.name,
+                street_address: apt.street_address,
+                city: apt.city || 'Atlanta',
+                state: apt.state || 'GA',
+                zip_code: apt.zip_code,
+                formatted_address: apt.formatted_address,
+                phone: apt.phone,
+                url: apt.url,
+                price_range: apt.price_range,
+                bed_range: apt.bed_range,
+                image_base64: apt.image_url,
+                coordinates: apt.coordinates ? 
+                    (Array.isArray(apt.coordinates) ? apt.coordinates : [apt.coordinates.lat, apt.coordinates.lon]) : 
+                    null,
+                proximities: apt.proximities || {},
+                user_generated: apt.user_generated || false,
+                google_verified: apt.google_verified || false
+            }));
+            
+            console.log(`Loaded ${this.apartmentData.length} apartments from Supabase for matching`);
         } catch (error) {
             console.error('Error loading apartment data:', error);
             this.apartmentData = [];
         }
+    }
+
+    // Advanced duplicate detection methods
+    normalizeApartmentName(name) {
+        return name.toLowerCase()
+            .replace(/\b(apartment|apartments|apt|apts|building|buildings|residence|residences|lofts|loft|towers|tower|place|plaza|square|sq|student|housing|complex|homes|home)\b/g, '')
+            .replace(/\b(on|at|the|of)\b/g, '')
+            .replace(/[^\w\s]/g, '') // Remove punctuation
+            .replace(/\s+/g, ' ') // Normalize spaces
+            .replace(/\b(\d+)(st|nd|rd|th)\b/g, '$1') // Remove ordinal suffixes (5th -> 5, 1st -> 1)
+            .replace(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\b/g, (match) => {
+                const numbers = {
+                    'first': '1', 'second': '2', 'third': '3', 'fourth': '4', 'fifth': '5',
+                    'sixth': '6', 'seventh': '7', 'eighth': '8', 'ninth': '9', 'tenth': '10'
+                };
+                return numbers[match] || match;
+            })
+            .trim();
+    }
+
+    normalizeAddress(address) {
+        return address.toLowerCase()
+            .replace(/\b(street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|way|circle|cir|court|ct|northwest|nw|northeast|ne|southwest|sw|southeast|se|north|south|east|west)\b/g, '')
+            .replace(/[^\w\s]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    calculateSimilarity(str1, str2) {
+        // Levenshtein distance similarity
+        const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+        
+        for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+        for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+        
+        for (let j = 1; j <= str2.length; j++) {
+            for (let i = 1; i <= str1.length; i++) {
+                const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+                matrix[j][i] = Math.min(
+                    matrix[j][i - 1] + 1,     // deletion
+                    matrix[j - 1][i] + 1,     // insertion
+                    matrix[j - 1][i - 1] + cost // substitution
+                );
+            }
+        }
+        
+        const maxLength = Math.max(str1.length, str2.length);
+        return maxLength === 0 ? 1 : 1 - (matrix[str2.length][str1.length] / maxLength);
+    }
+
+    findDuplicateByNameAndAddress(inputName, inputAddress) {
+        const normalizedInputName = this.normalizeApartmentName(inputName);
+        const normalizedInputAddress = this.normalizeAddress(inputAddress);
+        
+        let bestMatch = null;
+        let bestScore = 0;
+        
+        for (const apartment of this.apartmentData) {
+            const normalizedAptName = this.normalizeApartmentName(apartment.name);
+            const normalizedAptAddress = this.normalizeAddress(apartment.formatted_address || apartment.street_address || '');
+            
+            // Calculate name similarity
+            const nameSimilarity = this.calculateSimilarity(normalizedInputName, normalizedAptName);
+            
+            // Calculate address similarity
+            const addressSimilarity = this.calculateSimilarity(normalizedInputAddress, normalizedAptAddress);
+            
+            // Combined score with name weighted more heavily
+            const combinedScore = (nameSimilarity * 0.7) + (addressSimilarity * 0.3);
+            
+            // Also check if they share significant common words
+            const inputWords = normalizedInputName.split(' ').filter(w => w.length > 2);
+            const aptWords = normalizedAptName.split(' ').filter(w => w.length > 2);
+            const commonWords = inputWords.filter(word => aptWords.includes(word));
+            const wordOverlapBonus = commonWords.length > 0 ? 0.1 * (commonWords.length / Math.max(inputWords.length, aptWords.length)) : 0;
+            
+            const finalScore = combinedScore + wordOverlapBonus;
+            
+            if (finalScore > bestScore && finalScore > this.similarityThreshold) {
+                bestScore = finalScore;
+                bestMatch = {
+                    apartment,
+                    similarity: finalScore,
+                    nameSimilarity,
+                    addressSimilarity,
+                    confidence: finalScore > this.highConfidenceThreshold ? 'high' : 'medium'
+                };
+            }
+        }
+        
+        return bestMatch;
+    }
+
+    findDuplicateByCoordinates(inputCoordinates, radiusKm = 0.1) {
+        if (!inputCoordinates || inputCoordinates.length !== 2) return null;
+        
+        const [inputLat, inputLng] = inputCoordinates;
+        
+        for (const apartment of this.apartmentData) {
+            if (!apartment.coordinates || apartment.coordinates.length !== 2) continue;
+            
+            const [aptLat, aptLng] = apartment.coordinates;
+            
+            // Calculate distance using Haversine formula
+            const R = 6371; // Earth's radius in km
+            const dLat = (aptLat - inputLat) * Math.PI / 180;
+            const dLng = (aptLng - inputLng) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                     Math.cos(inputLat * Math.PI / 180) * Math.cos(aptLat * Math.PI / 180) *
+                     Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+            
+            if (distance <= radiusKm) {
+                return {
+                    apartment,
+                    distance,
+                    confidence: 'high'  // Very close coordinates = high confidence duplicate
+                };
+            }
+        }
+        
+        return null;
+    }
+
+    checkForDuplicate(inputName, inputAddress, inputCoordinates = null) {
+        console.log(`Checking for duplicates of: "${inputName}" at "${inputAddress}"`);
+        
+        // First, check by coordinates if available (most reliable)
+        if (inputCoordinates) {
+            const coordinateMatch = this.findDuplicateByCoordinates(inputCoordinates);
+            if (coordinateMatch) {
+                console.log(`Found coordinate-based duplicate: ${coordinateMatch.apartment.name} (${coordinateMatch.distance.toFixed(3)}km away)`);
+                return {
+                    isDuplicate: true,
+                    match: coordinateMatch,
+                    reason: 'coordinates',
+                    message: `This location is very close (${(coordinateMatch.distance * 1000).toFixed(0)}m) to "${coordinateMatch.apartment.name}". They might be the same property.`
+                };
+            }
+        }
+        
+        // Then check by name and address similarity
+        const nameAddressMatch = this.findDuplicateByNameAndAddress(inputName, inputAddress);
+        if (nameAddressMatch) {
+            console.log(`Found name/address-based duplicate: ${nameAddressMatch.apartment.name} (${(nameAddressMatch.similarity * 100).toFixed(1)}% similarity)`);
+            return {
+                isDuplicate: true,
+                match: nameAddressMatch,
+                reason: 'name_address',
+                message: `"${inputName}" appears to be very similar to existing apartment "${nameAddressMatch.apartment.name}" (${(nameAddressMatch.similarity * 100).toFixed(1)}% match).`
+            };
+        }
+        
+        console.log('No duplicates found');
+        return { isDuplicate: false };
     }
 
     // Main function: find apartment or get suggestions
@@ -370,6 +571,28 @@ class SmartApartmentMatcher {
         // Step 1: Validate with Google Maps
         const googleValidation = await this.validateWithGoogleMaps(name);
         
+        // Step 2: Check for duplicates before creating
+        if (googleValidation.success) {
+            const duplicateCheck = this.checkForDuplicate(
+                name, 
+                googleValidation.data.formatted_address,
+                googleValidation.data.coordinates
+            );
+            
+            if (duplicateCheck.isDuplicate) {
+                console.log(`🚫 Duplicate detected: ${duplicateCheck.message}`);
+                return {
+                    success: false,
+                    isDuplicate: true,
+                    existingApartment: duplicateCheck.match.apartment,
+                    reason: duplicateCheck.reason,
+                    message: duplicateCheck.message,
+                    confidence: duplicateCheck.match.confidence,
+                    action: 'duplicate_found'
+                };
+            }
+        }
+        
         let newApartment;
         if (googleValidation.success) {
             // Use Google Maps data if validation successful
@@ -432,8 +655,146 @@ class SmartApartmentMatcher {
             return data;
         } catch (error) {
             console.error('Error inserting new apartment:', error);
-            return newApartment;
         }
+        
+        return newApartment;
+    }
+
+    // Force create apartment without duplicate checking (for when user explicitly wants to create anyway)
+    async forceCreateApartment(name) {
+        console.log(`🔄 Force creating "${name}" (bypassing duplicate check)...`);
+        
+        // Step 1: Validate with Google Maps
+        const googleValidation = await this.validateWithGoogleMaps(name);
+        
+        let newApartment;
+        if (googleValidation.success) {
+            // Use Google Maps data if validation successful
+            newApartment = {
+                name: name,
+                street_address: googleValidation.data.street_address,
+                city: googleValidation.data.city || 'Atlanta',
+                state: googleValidation.data.state || 'GA',
+                zip_code: googleValidation.data.zip_code,
+                formatted_address: googleValidation.data.formatted_address,
+                phone: googleValidation.data.phone,
+                url: googleValidation.data.website,
+                price_range: null,
+                bed_range: null,
+                image_url: null,
+                user_generated: true,
+                google_place_id: googleValidation.data.place_id,
+                google_verified: true,
+                coordinates: googleValidation.data.coordinates
+            };
+        } else {
+            // Fallback creation without Google Maps validation
+            newApartment = {
+                name: name,
+                street_address: null,
+                city: 'Atlanta',
+                state: 'GA',
+                zip_code: null,
+                formatted_address: name,
+                phone: null,
+                url: null,
+                price_range: null,
+                bed_range: null,
+                image_url: null,
+                user_generated: true,
+                google_place_id: null,
+                google_verified: false,
+                coordinates: null
+            };
+        }
+
+        // Check if it already exists in Supabase (to avoid database errors)
+        try {
+            const { data: existingApartment, error: checkError } = await window.supabaseClient
+                .from('apartments')
+                .select('*')
+                .eq('name', name)
+                .single();
+
+            if (!checkError && existingApartment) {
+                console.log('Apartment already exists in database, returning existing');
+                return {
+                    success: true,
+                    apartment: existingApartment,
+                    confidence: 'high',
+                    action: 'found_existing'
+                };
+            }
+        } catch (error) {
+            // Continue with creation if check fails
+        }
+
+        // Add to Supabase
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('apartments')
+                .insert([newApartment])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Error adding to Supabase:', error);
+                
+                // Retry without optional fields if schema mismatch
+                if (error.message.includes('Could not find') || error.message.includes('column')) {
+                    const basicApartment = {
+                        name: newApartment.name,
+                        street_address: newApartment.street_address,
+                        city: newApartment.city,
+                        state: newApartment.state,
+                        zip_code: newApartment.zip_code,
+                        formatted_address: newApartment.formatted_address,
+                        phone: newApartment.phone,
+                        url: newApartment.url,
+                        price_range: newApartment.price_range,
+                        bed_range: newApartment.bed_range,
+                        user_generated: newApartment.user_generated
+                    };
+
+                    const { data: retryData, error: retryError } = await window.supabaseClient
+                        .from('apartments')
+                        .insert([basicApartment])
+                        .select()
+                        .single();
+
+                    if (retryError) {
+                        throw new Error(`Database error: ${retryError.message}`);
+                    }
+
+                    data = retryData;
+                }
+            }
+
+            if (data) {
+                // Add to local data for future searches
+                this.apartmentData.push(data);
+                
+                console.log(`✅ Force created apartment: ${data.name}`);
+                return {
+                    success: true,
+                    apartment: data,
+                    confidence: 'high',
+                    action: 'force_created'
+                };
+            }
+
+        } catch (error) {
+            console.error('Error force creating apartment:', error);
+            return {
+                success: false,
+                error: `Failed to create apartment: ${error.message}`
+            };
+        }
+
+        return {
+            success: false,
+            error: 'Unknown error occurred during apartment creation'
+        };
     }
 
     // Validate apartment with Google Maps Places (New) API

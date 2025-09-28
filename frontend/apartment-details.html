@@ -21,6 +21,9 @@
         const SUPABASE_URL = 'https://dbkmzqknpvzumthytnyw.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRia216cWtucHZ6dW10aHl0bnl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MzUyNzQsImV4cCI6MjA3NDUxMTI3NH0.B0wXbXmKHW1iJzmMfOsi4_-fnl_qZUduE2CYn2AOlKE';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Google Maps API key - UPDATE THIS WITH YOUR WORKING API KEY
+        const GOOGLE_PLACES_API_KEY = 'YOUR_API_KEY_HERE';
     </script>
     <style>
         :root {
@@ -84,25 +87,15 @@
         }
 
         .top-layout {
-            display: flex;
-            gap: 20px;
             margin-bottom: 20px;
         }
 
         .header-section {
-            flex: 0 0 48%;
             background: white;
             padding: 30px;
             border-radius: 8px;
             box-shadow: var(--shadow);
-        }
-
-        .image-section {
-            flex: 1;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
+            width: 100%;
         }
 
         .map-section {
@@ -167,34 +160,12 @@
             margin-bottom: 20px;
         }
 
-        .apartment-image {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 6px;
-            background-color: var(--light-gray);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-            font-style: italic;
-        }
-
         .mini-map {
             width: 100%;
             height: 300px;
             border-radius: 6px;
             background-color: var(--light-gray);
         }
-
-        @media (max-width: 768px) {
-            .top-layout {
-                flex-direction: column;
-            }
-            
-            .header-section {
-                flex: none;
-            }
             
             .apartment-meta {
                 grid-template-columns: 1fr;
@@ -523,20 +494,6 @@
             color: var(--gt-navy);
         }
 
-        .financial-info-placeholder {
-            margin: 10px 0;
-            padding: 8px 12px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border-left: 4px solid #dee2e6;
-        }
-
-        .financial-placeholder-text {
-            font-size: 12px;
-            color: #6c757d;
-            font-style: italic;
-        }
-
         .financial-summary {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -685,15 +642,42 @@
             return params.get('apartment');
         }
 
-        // Load apartment data
+        // Load apartment data from Supabase
         async function loadData() {
             try {
-                const response = await fetch('apartment_data.json');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                // Fetch apartments directly from Supabase
+                const { data: supabaseApartments, error } = await supabase
+                    .from('apartments')
+                    .select('*')
+                    .order('name');
+
+                if (error) {
+                    throw new Error(`Supabase error: ${error.message}`);
                 }
-                const data = await response.json();
-                return data;
+
+                // Transform Supabase data to match expected format
+                const apartments = supabaseApartments.map(apt => ({
+                    name: apt.name,
+                    street_address: apt.street_address,
+                    city: apt.city || 'Atlanta',
+                    state: apt.state || 'GA',
+                    zip_code: apt.zip_code,
+                    formatted_address: apt.formatted_address,
+                    phone: apt.phone,
+                    url: apt.url,
+                    price_range: apt.price_range,
+                    bed_range: apt.bed_range,
+                    image_base64: apt.image_url,
+                    coordinates: apt.coordinates ? 
+                        (Array.isArray(apt.coordinates) ? apt.coordinates : [apt.coordinates.lat, apt.coordinates.lon]) : 
+                        null,
+                    proximities: apt.proximities || {},
+                    user_generated: apt.user_generated || false,
+                    google_verified: apt.google_verified || false
+                }));
+                
+                console.log(`Loaded ${apartments.length} apartments from Supabase`);
+                return apartments;
             } catch (error) {
                 console.error('Error loading data:', error);
                 return null;
@@ -934,29 +918,57 @@
 
         // Render apartment details
         function renderApartment(apartmentName, apartmentInfo, summary, commentCount) {
+            // Clean up null values with proper fallbacks
+            const priceDisplay = apartmentInfo.price_range && apartmentInfo.price_range !== 'null' 
+                ? apartmentInfo.price_range 
+                : 'Contact for pricing';
+                
+            const bedDisplay = apartmentInfo.bed_range && apartmentInfo.bed_range !== 'null' 
+                ? apartmentInfo.bed_range 
+                : 'Contact for details';
+                
+            const phoneDisplay = apartmentInfo.phone && apartmentInfo.phone !== 'null' 
+                ? apartmentInfo.phone 
+                : 'Contact info available on source';
+                
+            const addressDisplay = apartmentInfo.formatted_address && apartmentInfo.formatted_address !== 'null' 
+                ? apartmentInfo.formatted_address 
+                : 'Address available on source';
+                
+            const sourceUrl = apartmentInfo.url && apartmentInfo.url !== 'null' 
+                ? apartmentInfo.url 
+                : '#';
+                
+            const sourceLinkText = apartmentInfo.url && apartmentInfo.url !== 'null' 
+                ? 'View on Apartments.com' 
+                : 'Contact property directly';
+
             const html = `
                 <div class="top-layout">
                     <div class="header-section">
                         <div class="apartment-name">${apartmentName}</div>
-                        <div class="apartment-price">${apartmentInfo.price_range}</div>
+                        <div class="apartment-price">${priceDisplay}</div>
                         
                         <div class="apartment-meta">
                             <div class="meta-item">
                                 <div class="meta-label">Address</div>
-                                <div class="meta-value">${apartmentInfo.formatted_address}</div>
+                                <div class="meta-value">${addressDisplay}</div>
                             </div>
                             <div class="meta-item">
                                 <div class="meta-label">Phone</div>
-                                <div class="meta-value">${apartmentInfo.phone}</div>
+                                <div class="meta-value">${phoneDisplay}</div>
                             </div>
                             <div class="meta-item">
                                 <div class="meta-label">Bedrooms</div>
-                                <div class="meta-value">${apartmentInfo.bed_range}</div>
+                                <div class="meta-value">${bedDisplay}</div>
                             </div>
                             <div class="meta-item">
                                 <div class="meta-label">Source</div>
                                 <div class="meta-value">
-                                    <a href="${apartmentInfo.url}" target="_blank" style="color: var(--gt-navy);">View on Apartments.com</a>
+                                    ${sourceUrl !== '#' ? 
+                                        `<a href="${sourceUrl}" target="_blank" style="color: var(--gt-navy);">${sourceLinkText}</a>` : 
+                                        `<span style="color: #666;">${sourceLinkText}</span>`
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -966,14 +978,9 @@
                             <div id="financial-preview-content"></div>
                         </div>
 
-                        <a href="tel:${apartmentInfo.phone}" class="contact-btn">Call ${apartmentInfo.phone}</a>
-                    </div>
-                    
-                    <div class="image-section">
-                        <div class="section-title">Property Image</div>
-                        ${apartmentInfo.image_base64 ? 
-                            `<img src="data:image/jpeg;base64,${apartmentInfo.image_base64}" alt="${apartmentName}" class="apartment-image">` :
-                            '<div class="apartment-image">No image available</div>'
+                        ${phoneDisplay !== 'Contact info available on source' ? 
+                            `<a href="tel:${apartmentInfo.phone}" class="contact-btn">Call ${apartmentInfo.phone}</a>` : 
+                            `<a href="${sourceUrl}" target="_blank" class="contact-btn">Contact Property</a>`
                         }
                     </div>
                 </div>
@@ -1276,14 +1283,6 @@
 
         // Generate financial information for individual review
         function generateFinancialInfo(review) {
-            // Debug log to see what financial data is available
-            console.log('Financial data for review:', {
-                monthly_rent: review.monthly_rent,
-                hidden_fees: review.hidden_fees,
-                utilities_cost: review.utilities_cost,
-                parking_cost: review.parking_cost
-            });
-
             const financialData = [];
             
             if (review.monthly_rent && review.monthly_rent > 0) {
@@ -1299,11 +1298,7 @@
                 financialData.push({ label: 'Parking', value: review.parking_cost === 0 ? 'Free' : `$${review.parking_cost}` });
             }
             
-            if (financialData.length === 0) {
-                console.log('No financial data found for this review');
-                // Return a placeholder to indicate financial data wasn't provided
-                return '<div class="financial-info-placeholder"><span class="financial-placeholder-text">Financial data not provided</span></div>';
-            }
+            if (financialData.length === 0) return '';
             
             let html = '<div class="financial-info">';
             financialData.forEach(item => {
@@ -1316,7 +1311,6 @@
             });
             html += '</div>';
             
-            console.log('Generated financial HTML:', html);
             return html;
         }
 

@@ -58,7 +58,128 @@
             font-size: 14px;
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
+        .header-btn {
+            background-color: var(--gt-gold);
+            color: var(--gt-navy);
+            padding: 8px 16px;
+            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header-btn:hover {
+            background-color: #9B8A5A;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        /* Profile dropdown styles */
+        .profile-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .profile-btn {
+            background-color: var(--gt-gold);
+            color: var(--gt-navy);
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 120px;
+            justify-content: space-between;
+        }
+
+        .profile-btn:hover {
+            background-color: #9B8A5A;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .profile-btn .dropdown-arrow {
+            font-size: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .profile-btn.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            z-index: 1000;
+            border: 1px solid #e1e5e9;
+            overflow: hidden;
+            animation: dropdownSlideIn 0.2s ease;
+        }
+
+        @keyframes dropdownSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .dropdown-content.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            color: var(--gt-navy);
+            padding: 14px 18px;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: var(--gt-gold);
+            padding-left: 22px;
+        }
+
+        .dropdown-item:active {
+            background-color: #e9ecef;
+        }
 
         /* Main container */
         .main-container {
@@ -309,19 +430,57 @@
         /* Listing card */
         .listing-card {
             border-bottom: 1px solid #eee;
-            padding: 20px;
+            padding: 0;
             cursor: pointer;
             transition: all 0.3s ease;
+            overflow: hidden;
         }
 
         .listing-card:hover {
             background-color: var(--light-gray);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .listing-card.focused {
             background-color: #e3f2fd;
             border-left: 4px solid var(--gt-navy);
-            padding-left: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .listing-image {
+            width: 100%;
+            height: 150px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .listing-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .listing-card:hover .listing-image img {
+            transform: scale(1.05);
+        }
+
+        .listing-content {
+            padding: 20px;
+        }
+
+        /* Style for cards without images */
+        .listing-card:not(:has(.listing-image)) .listing-content {
+            padding-top: 25px;
+        }
+        
+        /* Fallback for browsers that don't support :has() */
+        .listing-card .listing-content {
+            min-height: 200px;
+        }
+        
+        .listing-card:has(.listing-image) .listing-content {
+            min-height: auto;
         }
 
         .listing-name {
@@ -678,6 +837,16 @@
             <h1>StingerSpaces</h1>
             <p>Georgia Tech Off-Campus Housing Finder</p>
         </div>
+        <div class="header-right">
+            <button id="add-review-btn" class="header-btn" style="background-color: var(--gt-gold); color: var(--gt-navy); margin-right: 10px;">
+                📝 Add Review
+            </button>
+            <div id="auth-container">
+                <button id="auth-btn" class="header-btn">
+                    Sign In
+                </button>
+            </div>
+        </div>
     </header>
     
     <div id="loading-status">Loading apartments...</div>
@@ -728,10 +897,6 @@
                             <div class="sort-option" data-value="rating-high">User Rating (High to Low)</div>
                             <div class="sort-option" data-value="rating-low">User Rating (Low to High)</div>
                             <div class="sort-option" data-value="reviews-most">Most Reviews</div>
-                            <div class="sort-option" data-value="distance-culc">Distance to CULC</div>
-                            <div class="sort-option" data-value="distance-crc">Distance to CRC</div>
-                            <div class="sort-option" data-value="distance-tech">Distance to Tech Square</div>
-                            <div class="sort-option" data-value="distance-marta">Distance to MARTA</div>
                         </div>
                     </div>
                 </div>
@@ -745,6 +910,13 @@
 
     <!-- Supabase JS -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://dbkmzqknpvzumthytnyw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRia216cWtucHZ6dW10aHl0bnl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MzUyNzQsImV4cCI6MjA3NDUxMTI3NH0.B0wXbXmKHW1iJzmMfOsi4_-fnl_qZUduE2CYn2AOlKE';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabase;
+    </script>
     
     <!-- Leaflet JavaScript -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -761,20 +933,74 @@
             attribution: '© OpenStreetMap contributors, © CARTO'
         }).addTo(map);
 
-        // Add map event listeners for bounds-based filtering
+        // Map event listeners (removed bounds-based filtering)
         let mapUpdateTimeout;
-        map.on('moveend zoomend', function() {
-            // Debounce the update to avoid too many calls during rapid map changes
-            clearTimeout(mapUpdateTimeout);
-            mapUpdateTimeout = setTimeout(() => {
-                if (apartmentsData.length > 0) {
-                    updateListingsForMapView();
-                }
-            }, 300); // 300ms delay
-        });
 
         // Helper function to delay execution
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Google Places API key - replace with your actual key
+        const GOOGLE_PLACES_API_KEY = 'AIzaSyBOti4mM30W5_fNaLQBug9XjmRRhJ_vBp4'; // You'll need to add your API key here
+
+        // Function to get apartment image using Google Street View Static API
+        async function getApartmentImage(apartmentName, address, coordinates) {
+            try {
+                // Use coordinates if available, otherwise use address
+                let location = '';
+                if (coordinates && coordinates.length === 2) {
+                    location = `${coordinates[0]},${coordinates[1]}`;
+                } else {
+                    location = encodeURIComponent(address);
+                }
+                
+                // Generate Street View image URL
+                const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=400x250&location=${location}&heading=0&pitch=10&key=${GOOGLE_PLACES_API_KEY}`;
+                
+                // Test if the image is available by trying to load it
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        // Image loaded successfully
+                        resolve(streetViewUrl);
+                    };
+                    img.onerror = () => {
+                        // Image failed to load, return null
+                        resolve(null);
+                    };
+                    img.src = streetViewUrl;
+                    
+                    // Timeout after 5 seconds
+                    setTimeout(() => {
+                        resolve(null);
+                    }, 5000);
+                });
+                
+            } catch (error) {
+                console.error(`Error fetching image for ${apartmentName}:`, error);
+                return null;
+            }
+        }
+
+        // Cache for apartment images
+        const IMAGE_CACHE_KEY = 'stingerspaces_images';
+        
+        function loadImageCache() {
+            try {
+                const cached = sessionStorage.getItem(IMAGE_CACHE_KEY);
+                return cached ? JSON.parse(cached) : {};
+            } catch (error) {
+                console.error('Error loading image cache:', error);
+                return {};
+            }
+        }
+        
+        function saveImageCache(cache) {
+            try {
+                sessionStorage.setItem(IMAGE_CACHE_KEY, JSON.stringify(cache));
+            } catch (error) {
+                console.error('Error saving image cache:', error);
+            }
+        }
 
         // Session storage key for geocoded addresses
         const GEOCACHE_KEY = 'stingerspaces_geocache';
@@ -937,19 +1163,49 @@
                     </div>
                 </div>`;
 
+            // Check if we have a Google image
+            const hasImage = apartment.google_image_url;
+            
+            // Create image section only if we have an image
+            const imageSection = hasImage ? `
+                <div class="listing-image">
+                    <img src="${apartment.google_image_url}" alt="${apartment.name}" loading="lazy" 
+                         onerror="this.style.display='none'; this.parentElement.style.display='none';">
+                </div>` : '';
+
+            // Clean up bed range display
+            let bedDisplay = apartment.bed_range;
+            if (!bedDisplay || bedDisplay === 'null' || bedDisplay === null) {
+                bedDisplay = 'Beds: Contact for info';
+            }
+
+            // Clean up price display - try to get from reviews if not available
+            let priceDisplay = apartment.price_range;
+            if (!priceDisplay || priceDisplay === 'null' || priceDisplay === null) {
+                // Try to get average rent from reviews if available
+                if (hasRatings && apartment.user_ratings.avg_monthly_rent) {
+                    priceDisplay = `~$${Math.round(apartment.user_ratings.avg_monthly_rent)}/month`;
+                } else {
+                    priceDisplay = 'Price: Contact for info';
+                }
+            }
+
             return `
                 <div class="listing-card" data-apartment-name="${apartment.name}" id="listing-${index}">
-                    <div class="listing-name">${apartment.name}</div>
-                    <div class="listing-address">${apartment.formatted_address}</div>
-                    <div class="listing-phone">${apartment.phone}</div>
-                    ${ratingDisplay}
-                    <div class="listing-details">
-                        <div class="listing-bedrooms">${apartment.bed_range}</div>
-                        <div class="listing-price">${apartment.price_range}</div>
+                    ${imageSection}
+                    <div class="listing-content">
+                        <div class="listing-name">${apartment.name}</div>
+                        <div class="listing-address">${apartment.formatted_address}</div>
+                        <div class="listing-phone">${apartment.phone}</div>
+                        ${ratingDisplay}
+                        <div class="listing-details">
+                            <div class="listing-bedrooms">${bedDisplay}</div>
+                            <div class="listing-price">${priceDisplay}</div>
+                        </div>
+                        <button class="view-details-btn" onclick="viewApartmentDetails('${apartment.name}')">
+                            View Details
+                        </button>
                     </div>
-                    <button class="view-details-btn" onclick="viewApartmentDetails('${apartment.name}')">
-                        View Details
-                    </button>
                 </div>
             `;
         }
@@ -959,12 +1215,14 @@
 
         // Extract price value from price range string
         function extractMinPrice(priceRange) {
+            if (!priceRange || typeof priceRange !== 'string') return 0;
             const match = priceRange.match(/\$(\d+(?:,\d+)?)/);
             return match ? parseInt(match[1].replace(',', '')) : 0;
         }
 
         // Extract max price from price range string
         function extractMaxPrice(priceRange) {
+            if (!priceRange || typeof priceRange !== 'string') return 0;
             const matches = priceRange.match(/\$(\d+(?:,\d+)?)/g);
             if (matches && matches.length > 1) {
                 return parseInt(matches[1].replace(/[$,]/g, ''));
@@ -1001,34 +1259,6 @@
                     
                 case 'price-high':
                     return sorted.sort((a, b) => extractMinPrice(b.price_range) - extractMinPrice(a.price_range));
-                    
-                case 'distance-culc':
-                    return sorted.sort((a, b) => {
-                        const distA = a.proximities?.CULC?.distance_miles || 999;
-                        const distB = b.proximities?.CULC?.distance_miles || 999;
-                        return distA - distB;
-                    });
-                    
-                case 'distance-crc':
-                    return sorted.sort((a, b) => {
-                        const distA = a.proximities?.CRC?.distance_miles || 999;
-                        const distB = b.proximities?.CRC?.distance_miles || 999;
-                        return distA - distB;
-                    });
-                    
-                case 'distance-tech':
-                    return sorted.sort((a, b) => {
-                        const distA = a.proximities?.['Tech Square']?.distance_miles || 999;
-                        const distB = b.proximities?.['Tech Square']?.distance_miles || 999;
-                        return distA - distB;
-                    });
-                    
-                case 'distance-marta':
-                    return sorted.sort((a, b) => {
-                        const distA = a.proximities?.MARTA?.distance_miles || 999;
-                        const distB = b.proximities?.MARTA?.distance_miles || 999;
-                        return distA - distB;
-                    });
                     
                 case 'rating-high':
                     return sorted.sort((a, b) => {
@@ -1068,24 +1298,9 @@
                     if (!matchesSearch) return false;
                 }
                 
-                // Map bounds filter (when enabled)
-                if (useMapBounds && apartment.coordinates && apartment.coordinates.length === 2) {
-                    const bounds = map.getBounds();
-                    const [lat, lon] = apartment.coordinates;
-                    const point = L.latLng(lat, lon);
-                    if (!bounds.contains(point)) return false;
-                }
-                
+                // No map bounds filtering - show all apartments regardless of zoom
                 return true;
             });
-        }
-
-        // Function to update listings based on current map view
-        function updateListingsForMapView() {
-            if (apartmentsData.length === 0) return;
-            
-            // Use the populateListings function with map bounds enabled
-            populateListings(true);
         }
 
         // Get current filter values
@@ -1098,18 +1313,9 @@
 
 
         // Function to populate listings panel with filtering and sorting
-        function populateListings(enableMapBounds = false) {
+        function populateListings() {
             const sortBy = currentSortBy;
             const filters = getCurrentFilters();
-            
-            // Set map bounds filtering based on parameter
-            useMapBounds = enableMapBounds;
-            
-            // Update indicator visibility
-            const indicator = document.getElementById('map-filter-indicator');
-            if (indicator) {
-                indicator.style.display = enableMapBounds ? 'block' : 'none';
-            }
             
             // Filter apartments
             filteredApartments = filterApartments(apartmentsData, filters);
@@ -1120,12 +1326,7 @@
             // Update display
             const listingsContainer = document.getElementById('listings-container');
             if (filteredApartments.length === 0) {
-                const message = enableMapBounds ? 
-                    `<div style="padding: 40px 20px; text-align: center; color: #666;">
-                        <h3>No apartments in current view</h3>
-                        <p>Zoom out or pan the map to see more apartments.</p>
-                    </div>` :
-                    `<div style="padding: 40px 20px; text-align: center; color: #666;">
+                const message = `<div style="padding: 40px 20px; text-align: center; color: #666;">
                         <h3>No apartments found</h3>
                         <p>Try adjusting your search terms.</p>
                     </div>`;
@@ -1265,6 +1466,64 @@
             window.open(`apartment-details.html?apartment=${encodedName}`, '_blank');
         }
 
+        // Load apartment images from Google Places API
+        async function loadApartmentImages() {
+            try {
+                console.log('Loading apartment images from Google Places...');
+                const imageCache = loadImageCache();
+                let imagesLoaded = 0;
+                
+                for (let i = 0; i < apartmentsData.length; i++) {
+                    const apartment = apartmentsData[i];
+                    const cacheKey = `${apartment.name}_${apartment.formatted_address}`;
+                    
+                    // Check cache first
+                    if (imageCache[cacheKey]) {
+                        apartment.google_image_url = imageCache[cacheKey];
+                        console.log(`Using cached image for ${apartment.name}`);
+                        continue;
+                    }
+                    
+                    // Skip if we already have a working image
+                    if (apartment.image_base64 && apartment.image_base64.startsWith('http')) {
+                        apartment.google_image_url = apartment.image_base64;
+                        continue;
+                    }
+                    
+                    loadingStatus.textContent = `Loading images... ${i + 1}/${apartmentsData.length}`;
+                    
+                    // Fetch from Google Street View
+                    const imageUrl = await getApartmentImage(apartment.name, apartment.formatted_address, apartment.coordinates);
+                    if (imageUrl) {
+                        apartment.google_image_url = imageUrl;
+                        imageCache[cacheKey] = imageUrl;
+                        saveImageCache(imageCache);
+                        imagesLoaded++;
+                        console.log(`Loaded Street View image for ${apartment.name}`);
+                    } else {
+                        // Use a fallback placeholder image
+                        apartment.google_image_url = `https://via.placeholder.com/400x250/B3A369/003057?text=${encodeURIComponent(apartment.name)}`;
+                    }
+                    
+                    // Rate limiting - wait between requests
+                    if (i < apartmentsData.length - 1) {
+                        await delay(100); // 100ms delay between requests
+                    }
+                }
+                
+                console.log(`Loaded ${imagesLoaded} new images from Google Places`);
+                
+            } catch (error) {
+                console.error('Error loading apartment images:', error);
+                // Set fallback images for all apartments
+                apartmentsData.forEach(apartment => {
+                    if (!apartment.google_image_url) {
+                        apartment.google_image_url = `https://via.placeholder.com/400x250/B3A369/003057?text=${encodeURIComponent(apartment.name)}`;
+                    }
+                });
+            }
+        }
+
         // Load apartment ratings from Supabase
         async function loadApartmentRatings() {
             try {
@@ -1288,35 +1547,57 @@
                 await waitForSupabase();
                 
                 // Fetch apartment ratings summary
-                const { data: ratingsData, error } = await window.supabaseClient
-                    .from('apartment_ratings_summary')
-                    .select('*');
+                const { data: ratingsData, error } = await supabase
+                    .from('apartment_reviews')
+                    .select('apartment_name, overall_rating, safety_rating, proximity_grocery_rating, maintenance_rating, management_rating, amenities_rating')
+                    .not('overall_rating', 'is', null);
                 
                 if (error) {
                     console.error('Error fetching ratings data:', error);
                     return;
                 }
                 
-                console.log(`Loaded ratings for ${ratingsData.length} apartments`);
+                console.log(`Loaded ${ratingsData.length} reviews for rating calculation`);
                 
-                // Create a map for quick lookup
+                // Calculate averages by apartment
                 const ratingsMap = {};
-                ratingsData.forEach(rating => {
-                    ratingsMap[rating.apartment_name] = rating;
+                ratingsData.forEach(review => {
+                    if (!ratingsMap[review.apartment_name]) {
+                        ratingsMap[review.apartment_name] = {
+                            overall_ratings: [],
+                            safety_ratings: [],
+                            proximity_grocery_ratings: [],
+                            maintenance_ratings: [],
+                            management_ratings: [],
+                            amenities_ratings: []
+                        };
+                    }
+                    
+                    const apt = ratingsMap[review.apartment_name];
+                    if (review.overall_rating) apt.overall_ratings.push(review.overall_rating);
+                    if (review.safety_rating) apt.safety_ratings.push(review.safety_rating);
+                    if (review.proximity_grocery_rating) apt.proximity_grocery_ratings.push(review.proximity_grocery_rating);
+                    if (review.maintenance_rating) apt.maintenance_ratings.push(review.maintenance_rating);
+                    if (review.management_rating) apt.management_ratings.push(review.management_rating);
+                    if (review.amenities_rating) apt.amenities_ratings.push(review.amenities_rating);
                 });
+                
+                console.log(`Calculated ratings for ${Object.keys(ratingsMap).length} apartments`);
                 
                 // Merge ratings with apartment data
                 apartmentsData.forEach(apartment => {
-                    const ratings = ratingsMap[apartment.name];
-                    if (ratings) {
+                    const apartmentRatings = ratingsMap[apartment.name];
+                    if (apartmentRatings) {
+                        const calculateAvg = (arr) => arr.length > 0 ? Math.round((arr.reduce((sum, val) => sum + val, 0) / arr.length) * 10) / 10 : 0;
+                        
                         apartment.user_ratings = {
-                            overall: Math.round(ratings.avg_overall_rating * 10) / 10,
-                            safety: Math.round(ratings.avg_safety_rating * 10) / 10,
-                            proximity_grocery: Math.round(ratings.avg_proximity_grocery_rating * 10) / 10,
-                            maintenance: Math.round(ratings.avg_maintenance_rating * 10) / 10,
-                            management: Math.round(ratings.avg_management_rating * 10) / 10,
-                            amenities: Math.round(ratings.avg_amenities_rating * 10) / 10,
-                            total_reviews: ratings.total_reviews
+                            overall: calculateAvg(apartmentRatings.overall_ratings),
+                            safety: calculateAvg(apartmentRatings.safety_ratings),
+                            proximity_grocery: calculateAvg(apartmentRatings.proximity_grocery_ratings),
+                            maintenance: calculateAvg(apartmentRatings.maintenance_ratings),
+                            management: calculateAvg(apartmentRatings.management_ratings),
+                            amenities: calculateAvg(apartmentRatings.amenities_ratings),
+                            total_reviews: apartmentRatings.overall_ratings.length
                         };
                     } else {
                         apartment.user_ratings = {
@@ -1346,16 +1627,59 @@
                 console.log('Starting to load apartment data...');
                 loadingStatus.textContent = 'Loading apartment data...';
                 
-                const response = await fetch('apartment_data.json');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                // Fetch apartments directly from Supabase
+                const { data: supabaseApartments, error } = await supabase
+                    .from('apartments')
+                    .select('*')
+                    .order('name');
+
+                if (error) {
+                    throw new Error(`Supabase error: ${error.message}`);
                 }
+
+                // Transform Supabase data to match expected format
+                apartmentsData = supabaseApartments.map(apt => ({
+                    name: apt.name,
+                    street_address: apt.street_address,
+                    city: apt.city || 'Atlanta',
+                    state: apt.state || 'GA',
+                    zip_code: apt.zip_code,
+                    formatted_address: apt.formatted_address,
+                    phone: apt.phone,
+                    url: apt.url,
+                    price_range: apt.price_range,
+                    bed_range: apt.bed_range,
+                    image_base64: apt.image_url,
+                    coordinates: apt.coordinates ? 
+                        (Array.isArray(apt.coordinates) ? apt.coordinates : [apt.coordinates.lat, apt.coordinates.lon]) : 
+                        null,
+                    proximities: apt.proximities || {},
+                    user_generated: apt.user_generated || false,
+                    google_verified: apt.google_verified || false
+                }));
                 
-                apartmentsData = await response.json();
-                console.log(`Loaded ${apartmentsData.length} apartments`);
+                console.log(`Loaded ${apartmentsData.length} apartments from Supabase`);
+                
+                // Geocode apartments that don't have coordinates
+                const apartmentsNeedingGeocode = apartmentsData.filter(apt => !apt.coordinates && apt.formatted_address);
+                if (apartmentsNeedingGeocode.length > 0) {
+                    console.log(`${apartmentsNeedingGeocode.length} apartments need geocoding`);
+                    
+                    for (let i = 0; i < apartmentsNeedingGeocode.length; i++) {
+                        const apartment = apartmentsNeedingGeocode[i];
+                        const coords = await geocodeAddress(apartment.formatted_address, i, apartmentsNeedingGeocode.length);
+                        if (coords) {
+                            apartment.coordinates = [coords.lat, coords.lon];
+                            console.log(`Geocoded ${apartment.name}: [${coords.lat}, ${coords.lon}]`);
+                        }
+                    }
+                }
                 
                 // Load ratings data from Supabase if available
                 await loadApartmentRatings();
+                
+                // Fetch images for apartments
+                await loadApartmentImages();
                 
                 // Initialize filtered apartments with all apartments
                 filteredApartments = [...apartmentsData];
@@ -1411,7 +1735,6 @@
             searchInput.addEventListener('input', function() {
                 updateClearButtonVisibility();
                 populateListings();
-                updateMapMarkers();
             });
 
             // Clear search button
@@ -1419,7 +1742,6 @@
                 searchInput.value = '';
                 updateClearButtonVisibility();
                 populateListings();
-                updateMapMarkers();
                 searchInput.focus();
             });
 
@@ -1451,20 +1773,93 @@
 
             // Initialize active sort option
             updateSortButton('name', 'Name (A-Z)');
-        }        // Initialize the map with apartments
+        }
+
+        // Initialize Add Review button handler
+        function initializeAddReviewButton() {
+            const addReviewBtn = document.getElementById('add-review-btn');
+            if (addReviewBtn) {
+                addReviewBtn.addEventListener('click', function() {
+                    window.open('apartment-review.html', '_blank');
+                });
+            }
+        }
+
+        // Initialize authentication UI
+        function initializeAuth() {
+            const authContainer = document.getElementById('auth-container');
+            
+            supabase.auth.onAuthStateChange((event, session) => {
+                if (session && session.user) {
+                    const userEmail = session.user.email;
+                    const firstName = userEmail.split('@')[0];
+                    
+                    authContainer.innerHTML = `
+                        <div class="profile-dropdown">
+                            <button class="profile-btn" id="profile-btn">
+                                <span>👤 ${firstName}</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </button>
+                            <div class="dropdown-content" id="profile-dropdown">
+                                <div class="dropdown-item" id="sign-out-btn">Sign Out</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    const profileBtn = document.getElementById('profile-btn');
+                    const dropdown = document.getElementById('profile-dropdown');
+                    const signOutBtn = document.getElementById('sign-out-btn');
+                    
+                    profileBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        dropdown.classList.toggle('show');
+                        profileBtn.classList.toggle('active');
+                    });
+                    
+                    document.addEventListener('click', function() {
+                        dropdown.classList.remove('show');
+                        profileBtn.classList.remove('active');
+                    });
+                    
+                    signOutBtn.addEventListener('click', async function() {
+                        try {
+                            await supabase.auth.signOut();
+                        } catch (error) {
+                            console.error('Error signing out:', error);
+                        }
+                    });
+                    
+                } else {
+                    authContainer.innerHTML = `
+                        <button id="auth-btn" class="header-btn">
+                            Sign In
+                        </button>
+                    `;
+                    
+                    const authBtn = document.getElementById('auth-btn');
+                    authBtn.addEventListener('click', function() {
+                        window.location.href = 'landing.html';
+                    });
+                }
+            });
+
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                // This will trigger the onAuthStateChange above
+            });
+        }
+
+        // Initialize the map with apartments
         loadApartments().then(() => {
             // Initialize search and filters after apartments are loaded
             initializeFilters();
             addCampusMarkers();
             updateMapMarkers();
+            initializeAddReviewButton();
+            initializeAuth();
         });
 
 
     </script>
-    
-    <!-- Authentication integration -->
-    <script src="auth/js/auth-config.js"></script>
-    <script src="auth/js/main-app-auth.js"></script>
     
     <!-- Review popup -->
     <script src="js/review-popup.js"></script>
