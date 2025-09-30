@@ -46,7 +46,7 @@ class AuthUI {
         const password = document.getElementById('login-password').value;
 
         if (!this.validateEmail(email)) {
-            this.showError('Please enter a valid email address');
+            this.showError('Please enter a valid Georgia Tech email address (@gatech.edu)');
             return;
         }
 
@@ -79,7 +79,7 @@ class AuthUI {
         const fullName = document.getElementById('signup-name').value;
 
         if (!this.validateEmail(email)) {
-            this.showError('Please enter a valid email address');
+            this.showError('Please enter a valid Georgia Tech email address (@gatech.edu)');
             return;
         }
 
@@ -119,8 +119,9 @@ class AuthUI {
     }
 
     validateEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
+        // Only allow @gatech.edu email addresses
+        const gatechEmailRegex = /^[^\s@]+@gatech\.edu$/i;
+        return gatechEmailRegex.test(email);
     }
 
     showError(message) {

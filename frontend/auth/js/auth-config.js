@@ -60,6 +60,11 @@ class AuthManager {
 
     async signUp(email, password, userData = {}) {
         try {
+            // Validate Georgia Tech email domain
+            if (!email.toLowerCase().endsWith('@gatech.edu')) {
+                throw new Error('Only Georgia Tech email addresses (@gatech.edu) are allowed');
+            }
+
             const { data, error } = await supabase.auth.signUp({
                 email: email,
                 password: password,
@@ -78,6 +83,11 @@ class AuthManager {
 
     async signIn(email, password) {
         try {
+            // Validate Georgia Tech email domain
+            if (!email.toLowerCase().endsWith('@gatech.edu')) {
+                throw new Error('Only Georgia Tech email addresses (@gatech.edu) are allowed');
+            }
+
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password
